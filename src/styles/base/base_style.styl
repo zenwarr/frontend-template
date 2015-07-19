@@ -1,0 +1,88 @@
+p, h1, h2, h3, h4, h5, h6
+  margin: 0
+
+ul, ol
+  margin: 0
+  padding: 0
+  list-style: none
+
+a
+  color: inherit
+
+*, *:before, *:after
+  -moz-box-sizing: border-box
+  box-sizing: border-box
+
+em
+  font-style: normal
+
+figure
+  margin: 0
+
+.nowrap
+  white-space: nowrap
+
+input[type="search"]
+  box-sizing border-box
+
+textarea.form-input
+  resize vertical
+
+
+/************************************************************
+/** SPOILERS
+/************************************************************/
+
+.spoiler-details
+  overflow hidden
+  max-height 0
+  transition max-height .2s linear
+
+/************************************************************
+/** TABS
+/************************************************************/
+
+.tab
+  display none
+  transition opacity .2s linear
+
+  &.active
+    display block
+
+
+/************************************************************
+/** FORMS
+/************************************************************/
+
+.form-input-cont
+  position relative
+
+.form-input-placeholder
+  position absolute
+  left 0
+  right 0
+  top 0
+  pointer-events none
+
+.form-input
+  &:focus ~ .form-input-placeholder
+    display none
+
+  &.dirty ~ .form-input-placeholder
+    display none
+
+/************************************************************
+/** OVERLAY
+/************************************************************/
+
+.popup-overlay
+  display none
+  position fixed
+  left 0
+  top 0
+  right 0
+  bottom 0
+  z-index 1000
+
+  &.active
+    display block

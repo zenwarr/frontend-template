@@ -1,0 +1,430 @@
+use('../zutils.js')
+
+sprite-file-2x = '../../img/sprites/sprite.png'
+
+// if !file_exists(sprite-file-2x)
+//   error('sprite file specified [' + sprite-file-2x + '] does not exists!')
+
+// url = inline_svg
+
+ie-support-min = 8
+presto-support = true
+unicode-dot = '\00b7'
+
+// hack for Opera 12 (Presto)
+hack-presto()
+  /doesnotexist:-o-prefocus, &
+    {block}
+
+semantic-list()
+  list-style none
+  margin 0
+  padding 0
+
+clr()
+  &:after
+    content: ""
+    height: 0
+    display: table
+    clear: both
+
+  if ie-support-min <= 7
+    *zoom: 1
+
+size(a_width, a_height = null)
+  width a_width
+  height a_height == null ? a_width : a_height
+
+fixed-centered(a_width)
+  if a_width != null
+    width a_width
+  margin-left auto
+  margin-right auto
+
+themed-input()
+  border 0
+  padding 0
+
+  &:focus
+    outline: none
+
+themed-button()
+  border 0
+  padding 0
+
+  &::-moz-focus-inner
+    border: 0
+    padding: 0
+
+  &:focus
+    outline 0
+
+placeholder()
+  &::-webkit-input-placeholder
+    {block}
+  &:-moz-placeholder
+    {block}
+  &::-moz-placeholder
+    {block}
+  &:-ms-input-placeholder
+    {block}
+
+hide-text()
+  text-indent -99999px
+
+image-replace(a_image)
+  if !file_exists(a_image)
+    error('image-replace: file [' + a_image + '] not found')
+
+  hide-text()
+  background unquote('url(' + a_image + ')')
+  background-repeat no-repeat
+  width image-size(a_image)[0]
+  height image-size(a_image)[1]
+
+styled-check(a_label = '*')
+  position absolute
+  left -999999px
+
+  & + {a_label}
+    {block}
+
+styled-check-checked(a_label = '*')
+  &:checked + {a_label}
+    {block}
+
+  if ie-support-min <= 8
+    &.checked + {a_label}
+      {block}
+
+inline-block(a_align = top)
+  if ie-support-min <= 7
+    *zoom 1
+    *display inline
+  display inline-block
+  if a_align != null
+    vertical-align a_align
+
+font-size-zero()
+  font-size: 0
+
+  if presto-support
+    +hack-presto()
+      font-size 3px
+
+justify-children(font-reset = true)
+  text-align justify
+  text-justify newspaper
+
+  if font-reset == true
+    font-size-zero()
+
+  &:after
+    content ''
+    display inline-block
+    size 100% 0
+    visibility hidden
+
+hover-underline()
+  text-decoration none
+
+  &:hover, &:focus
+    text-decoration underline
+
+circle(a_size = null, a_color = null)
+  border-radius 50%
+  if a_size != null
+    size a_size
+  if a_color != null
+    background a_color
+
+hide-spin-buttons()
+  &::-webkit-inner-spin-button, &::-webkit-outer-spin-button
+    -webkit-appearance none
+    margin 0
+
+letter-spacing-ps(a_value)
+  letter-spacing (a_value / 1000) * 1em
+
+qtransition(props)
+  props = arguments if length(arguments) > 1
+  tp = ''
+  for arg in props
+    prop_text = arg + ' .2s linear'
+    if tp == ''
+      tp = prop_text
+    else
+      tp = tp + ', ' + prop_text
+  transition: tp
+
+qt = qtransition
+
+-pos(type, args)
+  i = 0
+  position: unquote(type)
+  for j in (1..4)
+    if length(args) > i
+      {args[i]}: args[i + 1] is a 'unit' ? args[i += 1] : 0
+    i += 1
+
+fixed()
+  -pos('fixed', arguments)
+
+absolute()
+  -pos('absolute', arguments)
+
+relative()
+  -pos('relative', arguments)
+
+grid-margin(width, parent-width, items)
+  return floor((parent-width - width * items) / (items - 1))
+
+ib-grid-container()
+  font-size-zero()
+
+ib-grid-item(width, parent-width, items, align = top)
+  display inline-block
+  vertical-align align
+  width width
+  margin-right grid-margin(width, parent-width, items)
+
+  &:nth-child({items}n)
+    margin-right 0
+
+  if ie-support-min <= 8
+    &.nth-child-{items}n
+      margin-right 0
+
+float-grid-container()
+  clr()
+
+float-grid-item(width, parent-width, items)
+  float left
+  width width
+  margin-right grid-margin(width, parent-width, items)
+
+  &:nth-child({items}n)
+    margin-right 0
+
+  if ie-support-min <= 8
+    &.nth-child-{items}n
+      margin-right 0
+
+a-like-btn()
+  display inline-block
+  text-decoration none
+
+
+font-weight-thin = 100
+font-weight-extralight = 200
+font-weight-light = 300
+font-weight-medium = 500
+font-weight-semibold = 600
+font-weight-extrabold = 800
+font-weight-black = 900
+
+left-right-children(l_width = null, r_width = null)
+  clr()
+
+  > .l
+    float left
+    if l_width != null
+      width l_width
+
+  > .r
+    float right
+    if r_width != null
+      width r_width
+    else if l_width != null
+      width l_width
+
+left-right-children-oh(l_width = null, r_width = null)
+  overflow hidden
+
+  > .l
+    float left
+    if l_width != null
+      width l_width
+
+  > .r
+    float right
+    if r_width != null
+      width r_width
+    else if l_width != null
+      width l_width
+
+
+
+abscenter-both()
+  position absolute
+  left 50%
+  top 50%
+  transform translateX(-50%) translateY(-50%)
+
+abscenter-hor()
+  position absolute
+  left 50%
+  transform translateX(-50%)
+
+abscenter-vert()
+  position absolute
+  top 50%
+  transform translateY(-50%)
+
+
+icon-default-options = {
+  hover: false
+  pseudo: null
+  margin-center: null // can be 'hor', 'vert', 'both'
+  margin: 4px
+  align: middle
+  optional: false
+}
+
+merge_defaults(hash1, hash2)
+  new_hash = hash1
+  for key in hash2
+    if !(key in new_hash)
+      new_hash[key] = hash2[key]
+  return new_hash
+
+target_sel(options)
+  return options.pseudo == null ? '' : '&:' + options.pseudo
+
+icon(icon, options = {})
+  options = merge_defaults(options, icon-default-options)
+
+  icon-name = lookup('$icon-' + icon)
+  if icon-name == null
+    if !options.optional
+      error('icon ' + icon + ' was not found!')
+    else
+      return
+
+  if options.pseudo != null && options.pseudo != 'before' && options.pseudo != 'after'
+    error('unknown pseudo option for icon mixin [' + options.pseudo + ']')
+  target-sel = target_sel(options)
+
+  icon-width = lookup('$icon-' + icon + '_width')
+  icon-height = lookup('$icon-' + icon + '_height')
+
+  props = {}
+  if options.margin-center != null
+    if options.margin-center == 'hor' || options.margin-center == 'both'
+      props['margin-left'] = (-(icon-width / 2))
+    if options.margin-center == 'vert' || options.margin-center == 'both'
+      props['margin-top'] = (-(icon-height / 2))
+
+  if options.pseudo != null
+    if options.margin != null
+      if options.pseudo == 'before'
+        props['margin-right'] = options.margin
+      else if options.pseudo == 'after'
+        props['margin-left'] = options.margin
+
+    if options.align != null
+      props['vertical-align'] = options.align
+
+  if options.pseudo != null
+    &:{options.pseudo}
+      content ''
+      display inline-block
+      sprite icon-name
+      {props}
+      {block}
+  else
+    display inline-block unless @display
+    sprite icon-name
+    {props}
+
+  if options.hover
+    icon-hover = lookup('$icon-' + icon + '-hover')
+    if icon-hover != null
+      &:hover
+        &{target-sel}
+          spritePosition icon-hover
+
+  icon-2x = lookup('$icon-' + icon + '-2x')
+  if icon-2x != null
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)
+      sprite-image-size = image-size(sprite-file-2x)
+      props = {
+        background-position: (icon-2x[2]/2) (icon-2x[3]/2)
+        background-size: (sprite-image-size[0]/2) (sprite-image-size[1]/2)
+      }
+
+      &{target-sel}
+        spriteImage(icon-2x)
+        {props}
+
+      if options.hover
+        icon-2x-hover = lookup('$icon-' + icon + '-2x-hover')
+        if icon-2x-hover != null
+          &:hover
+            props = {
+              background-position: (icon-2x-hover[2]/2) (icon-2x-hover[3]/2)
+            }
+            &{target-sel}
+              {props}
+
+icon-before(name, options = {})
+  options.pseudo = before
+  +icon(name, options)
+    block
+
+icon-after(name, options = {})
+  options.pseudo = after
+  +icon(name, options)
+    block
+
+icon-svg(name, options = {})
+  options = merge_defaults(options, icon-default-options)
+  target-sel = target_sel(options)
+
+  icon(name, options)
+
+  svg_path = '../../img/icon-' + name + '.svg'
+  if file_exists(svg_path)
+    if target-sel == ''  // lets stylus merge this into previous selector
+      background url(svg_path) 0 0 no-repeat, none
+      {block}
+    else
+      &{target-sel}
+        background url(svg_path) 0 0 no-repeat, none
+        {block}
+  else
+    error('no svg file found!')
+
+  if options.hover
+    &:hover
+      &{target-sel}
+        svg_path = '../../img/icon-' + name + '-hover.svg'
+        if file_exists(svg_path)
+          background url(svg_path) 0 0 no-repeat, none
+        else
+          icon-hover = lookup('$icon-' + name + '-hover')
+          if icon-hover != null
+            warn('no svg file for hover state (while sprite fallback is available)')
+            spriteImage icon-hover
+            spritePosition icon-hover
+
+          icon-hover-2x = lookup('$icon-' + name + '-2x-hover')
+          if icon-hover-2x != null
+            warn('no svg file for hover state (while 2x sprite fallback is available)')
+            @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)
+              spriteImage icon-hover-2x
+
+              sprite-image-size = image-size(sprite-file-2x)
+              background-position: (icon-hover-2x[2]/2) (icon-hover-2x[3]/2)
+              background-size: (sprite-image-size[0]/2) (sprite-image-size[1]/2)
+
+icon-svg-before(name, options = {})
+  options.pseudo = before
+  +icon-svg(name, options)
+    block
+
+icon-svg-after(name, options = {})
+  options.pseudo = after
+  +icon-svg(name, options)
+    block
+

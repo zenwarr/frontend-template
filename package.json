@@ -1,0 +1,24 @@
+{
+  "name": "simple-gulp",
+  "version": "0.0.1",
+  "devDependencies": {
+    "browser-sync": "^2.7.13",
+    "gulp": "^3.8.8",
+    "gulp-add-src": "^0.2.0",
+    "gulp-autoprefixer": "0.0.10",
+    "gulp-concat": "^2.5.2",
+    "gulp-deleted": "0.0.2",
+    "gulp-directory-sync": "^1.0.0",
+    "gulp-ignore": "^1.2.1",
+    "gulp-newer": "^0.4.0",
+    "gulp-order": "^1.1.1",
+    "gulp-plumber": "^0.6.5",
+    "gulp-preprocess": "^1.2.0",
+    "gulp-stylus": "^2.0.1",
+    "gulp-uglify": "^1.2.0",
+    "gulp-wait": "0.0.2",
+    "gulp-watch": "^4.3.3",
+    "gulp.spritesmith": "^1.2.0",
+    "stylus": "^0.51.1"
+  }
+}
