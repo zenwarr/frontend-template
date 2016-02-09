@@ -1,17 +1,25 @@
-p, h1, h2, h3, h4, h5, h6
-  margin: 0
-
-ul, ol
-  margin: 0
-  padding: 0
-  list-style: none
-
-a
-  color: inherit
+if $option-responsive == true
+  @-moz-viewport      { width: device-width; }
+  @-ms-viewport       { width: device-width; }
+  @-o-viewport        { width: device-width; }
+  @-webkit-viewport   { width: device-width; }
+  @viewport           { width: device-width; }
 
 *, *:before, *:after
   -moz-box-sizing: border-box
   box-sizing: border-box
+
+body
+  line-height 1.2 // match Photoshop default line-height
+
+p, h1, h2, h3, h4, h5, h6
+  margin: 0
+
+ul, ol
+  semantic-list()
+
+a
+  color: inherit
 
 em
   font-style: normal
@@ -19,70 +27,137 @@ em
 figure
   margin: 0
 
+input[type="search"]
+  box-sizing border-box // override box-sizing set by normalize.css
+  -webkit-appearance none // remove roundeded corners on iOS
+
+label
+  display inline-block
+
+input, button, select, textarea
+  line-height inherit
+
+textarea
+  resize vertical
+
+th
+  text-align inherit
+  font-weight inherit
+
+dd, dl
+  margin 0
+
+:disabled, [disabled], [aria-disabled="true"]
+  cursor not-allowed
+
 .nowrap
   white-space: nowrap
 
-input[type="search"]
-  box-sizing border-box
-
-textarea.form-input
-  resize vertical
-
-
-/************************************************************
-/** SPOILERS
-/************************************************************/
-
-.spoiler-details
-  overflow hidden
-  max-height 0
-  transition max-height .2s linear
+.hidden
+  display none !important
 
 /************************************************************
 /** TABS
 /************************************************************/
 
-.tab
-  display none
-  transition opacity .2s linear
+.tabs
+  &__tab
+    display: none
 
-  &.active
-    display block
+    html.no-js &
+      display: block
 
-
-/************************************************************
-/** FORMS
-/************************************************************/
-
-.form-input-cont
-  position relative
-
-.form-input-placeholder
-  position absolute
-  left 0
-  right 0
-  top 0
-  pointer-events none
-
-.form-input
-  &:focus ~ .form-input-placeholder
-    display none
-
-  &.dirty ~ .form-input-placeholder
-    display none
+    &--active
+      display: block
 
 /************************************************************
-/** OVERLAY
+/** RATINGS CONTROL
 /************************************************************/
 
-.popup-overlay
-  display none
-  position fixed
-  left 0
-  top 0
-  right 0
-  bottom 0
-  z-index 1000
+.rate[data-readonly]
+  cursor default
 
-  &.active
-    display block
+/************************************************************
+/** TABLES
+/************************************************************/
+
+.table
+  width 100%
+
+/************************************************************
+/** PRINTING STYLES
+/************************************************************/
+
+// from HTML5Boilerplate
+@media print {
+  *,
+  *:before,
+  *:after,
+  *:first-letter,
+  *:first-line {
+    background: transparent !important;
+    color: #000 !important; /* Black prints faster:
+                               http://www.sanbeiji.com/archives/953 */
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+
+  abbr[title]:after {
+    content: " (" attr(title) ")";
+  }
+
+  /*
+   * Don't show links that are fragment identifiers,
+   * or use the `javascript:` pseudo protocol
+   */
+
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after {
+    content: "";
+  }
+
+  pre,
+  blockquote {
+    border: 1px solid #999;
+    page-break-inside: avoid;
+  }
+
+  /*
+   * Printing Tables:
+   * http://css-discuss.incutio.com/wiki/Printing_Tables
+   */
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img {
+    page-break-inside: avoid;
+  }
+
+  img {
+    max-width: 100% !important;
+  }
+
+  p,
+  h2,
+  h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+}

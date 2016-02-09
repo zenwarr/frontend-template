@@ -1,26 +1,48 @@
+// This file is mixin and functions library. It adds nothing to generated css file.
+
 use('../zutils.js')
-
-sprite-file-2x = '../../img/sprites/sprite.png'
-
-// if !file_exists(sprite-file-2x)
-//   error('sprite file specified [' + sprite-file-2x + '] does not exists!')
 
 // url = inline_svg
 
-ie-support-min = 8
-presto-support = true
-unicode-dot = '\00b7'
+// some helpful variables
+$unicode-dot = '\00b7' // unicode middle dot code
 
-// hack for Opera 12 (Presto)
+$font-weight-thin = 100
+$font-weight-extralight = 200
+$font-weight-light = 300
+$font-weight-normal = 400
+$font-weight-medium = 500
+$font-weight-semibold = 600
+$font-weight-bold = 700
+$font-weight-extrabold = 800
+$font-weight-black = 900
+
+//////////////////////////////////////////////////////////////////////////////////
+// HACKS
+//////////////////////////////////////////////////////////////////////////////////
+
+// hack for Opera 12 (Presto). Use it in following way:
+// .selector
+//    ... // properties for all browsers
+//    +hack-presto()
+//      ... // properties that only presto browsers will understand
 hack-presto()
   /doesnotexist:-o-prefocus, &
     {block}
 
+//////////////////////////////////////////////////////////////////////////////////
+// SIMPLE UTILITES
+//////////////////////////////////////////////////////////////////////////////////
+
+// Removes default styling on list, helping to use ul and ol in semantic context
+// By default, all ul and ol are resetted in base_style.styl
 semantic-list()
   list-style none
   margin 0
   padding 0
 
+// Makes element clear itself to contain floating children.
+// Uses :after pseudoelement
 clr()
   &:after
     content: ""
@@ -31,27 +53,49 @@ clr()
   if ie-support-min <= 7
     *zoom: 1
 
+// helper for quick definition of width and height. If height is not specified, it will be
+// equal to width.
 size(a_width, a_height = null)
   width a_width
   height a_height == null ? a_width : a_height
 
+min-max-width(a_dim)
+  min-width: a_dim
+  max-width: a_dim
+
+// transforms element to circle width given size and color. Will not work on elements
+// with display: inline
+circle(a_size = null, a_color = null)
+  border-radius 50%
+  if a_size != null
+    size a_size
+  if a_color != null
+    background a_color
+
+
+// center element with fixed width. Uses margin auto technique
 fixed-centered(a_width)
   if a_width != null
     width a_width
   margin-left auto
   margin-right auto
 
+// reset common input styles
 themed-input()
+  appearance none
   border 0
   padding 0
 
   &:focus
     outline: none
 
+// reset common button styles
 themed-button()
+  appearance none
   border 0
   padding 0
 
+  // firefox adds extra space to buttons, remove it
   &::-moz-focus-inner
     border: 0
     padding: 0
@@ -59,29 +103,46 @@ themed-button()
   &:focus
     outline 0
 
+// allows to style html5 placeholders inside element
 placeholder()
   &::-webkit-input-placeholder
     {block}
-  &:-moz-placeholder
-    {block}
-  &::-moz-placeholder
+  if $firefox-support-min <= 18
+    &:-moz-placeholder // Firefox 18-
+      {block}
+  &::-moz-placeholder // Firefox 19+
     {block}
   &:-ms-input-placeholder
     {block}
 
+// hides text by indent. Will not work on elements with display: inline, of course
 hide-text()
   text-indent -99999px
 
-image-replace(a_image)
+// helpers for builting image-size Stylus function
+image-width(a_image)
+  return image-size(a_image)[0]
+
+image-height(a_image)
+  return image-size(a_image)[1]
+
+// forces element background to show given image and resizes this element to match dimensions
+// of image. Also hides text content of element.
+image-replace(a_image, hide-text = true)
   if !file_exists(a_image)
     error('image-replace: file [' + a_image + '] not found')
 
-  hide-text()
+  if hide-text
+    hide-text()
   background unquote('url(' + a_image + ')')
   background-repeat no-repeat
   width image-size(a_image)[0]
   height image-size(a_image)[1]
 
+// allows to style checkboxes and radio inputs in css. Note that for this techinque to
+// work on IE <= 8 you should add script to toggle 'checked' class on checkbox when it is
+// checked (make sure that $ie-support-min is less or equal 8). This code is included in script.js
+// file of this template
 styled-check(a_label = '*')
   position absolute
   left -999999px
@@ -93,27 +154,40 @@ styled-check-checked(a_label = '*')
   &:checked + {a_label}
     {block}
 
-  if ie-support-min <= 8
+  if $ie-support-min <= 8
     &.checked + {a_label}
       {block}
+
 
 inline-block(a_align = top)
   if ie-support-min <= 7
     *zoom 1
     *display inline
+
   display inline-block
   if a_align != null
     vertical-align a_align
 
+
+// sets font-size to 0. Note that in some browsers (presto, for example) font size cannot be set to
+// 0 due to minimal font size defined in browser settings. Some browsers ignore font-size: 0
+// and other (old webkit) will set font-size to some browser-specific minimal value. This mixin
+// tries to fix this issue on presto by setting font-size to 3px, but be careful with pixel
+// precise layouts based on inline-blocks!
 font-size-zero()
   font-size: 0
 
-  if presto-support
-    +hack-presto()
-      font-size 3px
+  // if presto-support
+  //   +hack-presto()
+  //     font-size 3px
 
+
+// justifies inline-block children. Optionally resets font-size to 0 to kill unwanted space
+// between children.
 justify-children(font-reset = true)
   text-align justify
+
+  // if $ie-support-min <= 7
   text-justify newspaper
 
   if font-reset == true
@@ -125,32 +199,18 @@ justify-children(font-reset = true)
     size 100% 0
     visibility hidden
 
-hover-underline()
-  text-decoration none
 
-  &:hover, &:focus
-    text-decoration underline
-
-circle(a_size = null, a_color = null)
-  border-radius 50%
-  if a_size != null
-    size a_size
-  if a_color != null
-    background a_color
-
-hide-spin-buttons()
-  &::-webkit-inner-spin-button, &::-webkit-outer-spin-button
-    -webkit-appearance none
-    margin 0
-
+// translates photoshop-style letter-spacing to em values
 letter-spacing-ps(a_value)
   letter-spacing (a_value / 1000) * 1em
 
+
+// quickly create css transitions for given properies. Aliased as qt.
 qtransition(props)
   props = arguments if length(arguments) > 1
   tp = ''
   for arg in props
-    prop_text = arg + ' .2s linear'
+    prop_text = arg + ' ' + $transition-default
     if tp == ''
       tp = prop_text
     else
@@ -159,7 +219,24 @@ qtransition(props)
 
 qt = qtransition
 
--pos(type, args)
+
+// analog of qtransiton, but with alternative animation style
+qtransition-alt(props)
+  props = arguments if length(arguments) > 1
+  tp = ''
+  for arg in props
+    prop_text = arg + ' ' + $transition-alt
+    if tp == ''
+      tp = prop_text
+    else
+      tp = tp + ', ' + prop_text
+  transition: tp
+
+qta = qtransition-alt
+
+
+// allows to write something like 'absolute 0 0 0 0'
+pos(type, args)
   i = 0
   position: unquote(type)
   for j in (1..4)
@@ -168,16 +245,57 @@ qt = qtransition
     i += 1
 
 fixed()
-  -pos('fixed', arguments)
+  pos('fixed', arguments)
 
 absolute()
-  -pos('absolute', arguments)
+  pos('absolute', arguments)
 
 relative()
   -pos('relative', arguments)
 
+
+//////////////////////////////////////////////////////////////////////////////////
+// COMMON PATTERNS
+//////////////////////////////////////////////////////////////////////////////////
+
+
+// mask link to look more like button
+a-like-btn()
+  display inline-block
+  text-decoration none
+
+
+// link that has underline only when hovered or focused
+hover-underline()
+  text-decoration none
+
+  &:hover, &:focus
+    text-decoration underline
+
+
+// hides spin buttons on input[number] element. IE has no buttons.
+hide-spin-buttons()
+  &::-webkit-inner-spin-button, &::-webkit-outer-spin-button
+    -webkit-appearance none
+    margin 0
+
+  -moz-appearance textfield
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// GRID LISTS
+//////////////////////////////////////////////////////////////////////////////////
+
+// generates fixed-width grid lists based on floats or inline-blocks. Grid container
+// should have ib-grid-container (or float-grid-container) mixin applied, and
+// children should have ib-grid-item (or float-grid-item) mixins applied. Mixin will
+// automatically calculate required margins for elements.
+
 grid-margin(width, parent-width, items)
-  return floor((parent-width - width * items) / (items - 1))
+  $calculated-margin = floor((parent-width - width * items) / (items - 1))
+  if $calculated-margin < 0
+    error('grid-margin: failed to fit ' + items + 'elements with width ' + width + ' inside ' + 'container with width ' + parent-width)
+  return $calculated-margin
 
 ib-grid-container()
   font-size-zero()
@@ -191,7 +309,7 @@ ib-grid-item(width, parent-width, items, align = top)
   &:nth-child({items}n)
     margin-right 0
 
-  if ie-support-min <= 8
+  if $ie-support-min <= 8
     &.nth-child-{items}n
       margin-right 0
 
@@ -206,38 +324,30 @@ float-grid-item(width, parent-width, items)
   &:nth-child({items}n)
     margin-right 0
 
-  if ie-support-min <= 8
+  if $ie-support-min <= 8
     &.nth-child-{items}n
       margin-right 0
 
-a-like-btn()
-  display inline-block
-  text-decoration none
 
-
-font-weight-thin = 100
-font-weight-extralight = 200
-font-weight-light = 300
-font-weight-medium = 500
-font-weight-semibold = 600
-font-weight-extrabold = 800
-font-weight-black = 900
-
+// force direct child with .l class to be floated to the left, and child with .r class - to the right.
+// parent element will clear itself.
 left-right-children(l_width = null, r_width = null)
   clr()
 
-  > .l
+  &__left
     float left
     if l_width != null
       width l_width
 
-  > .r
+  &__right
     float right
     if r_width != null
       width r_width
     else if l_width != null
       width l_width
 
+
+// same as above, but uses overflow: hidden on parent element to force it clear itself.
 left-right-children-oh(l_width = null, r_width = null)
   overflow hidden
 
@@ -252,7 +362,6 @@ left-right-children-oh(l_width = null, r_width = null)
       width r_width
     else if l_width != null
       width l_width
-
 
 
 abscenter-both()
@@ -272,13 +381,59 @@ abscenter-vert()
   transform translateY(-50%)
 
 
+fit-image()
+  position absolute
+  left 0
+  top 0
+  right 0
+  bottom 0
+  max-width 100%
+  max-height 100%
+  margin auto
+
+
+kill-edge-margins()
+  &:first-child
+    margin-top 0
+
+  &:last-child
+    margin-bottom 0
+
+
+kill-edge-paddings()
+  &:first-child
+    padding-top 0
+
+  &:last-child
+    padding-bottom 0
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// ICONS - ITS TIME TO GO HARDCORE
+//////////////////////////////////////////////////////////////////////////////////
+
+// Allows to generate icons from sprites. There is some conventions about icon names.
+// $icon-###            - base icon
+// $icon-###-hover      - icon for element with hover state
+// $icon-###-2x         - icon for displays with 2x pixel density
+// $icon-###-2x-hover   - icon for displays with 2p pixel density and for element with hover state
+
 icon-default-options = {
   hover: false
-  pseudo: null
-  margin-center: null // can be 'hor', 'vert', 'both'
-  margin: 4px
-  align: middle
-  optional: false
+  pseudo: null        // should icon be generated for element itself or for pseudoelement.
+                      // in second case its value should be 'before' or 'after'
+  margin-center: null // when positioning icon element, it is required sometimes to assign
+                      // negative margin for positioned element which equal to half of its
+                      // dimension. For example, you can center absolute positioned element
+                      // inside relative positioned parent with the following code:
+                      // .parent { position relative; }
+                      // .child { size 100px; absolute 50% 50%; margin-left: -50px; margin-top: -50%; }
+                      // this option allows to generate such margins. Can have one of values
+                      // [null, 'hor', 'vert', 'both']
+  margin: 4px         // only for icons generated on pseudoelements - margin-right value for
+                      // ::before, and margin-left for ::after
+  align: middle       // only for icons generated on pseudoelements - vertical-align value
+  optional: false     // if true, only warning will be generated when icon is missing
 }
 
 merge_defaults(hash1, hash2)
@@ -291,81 +446,104 @@ merge_defaults(hash1, hash2)
 target_sel(options)
   return options.pseudo == null ? '' : '&:' + options.pseudo
 
-icon(icon, options = {})
-  options = merge_defaults(options, icon-default-options)
+icon($icon, options = {})
+  $options = merge_defaults(options, icon-default-options)
 
-  icon-name = lookup('$icon-' + icon)
-  if icon-name == null
-    if !options.optional
-      error('icon ' + icon + ' was not found!')
+  // check if icon with given name exists
+  $icon-name = lookup('$icon-' + $icon)
+  if $icon-name == null
+    // optional flag can be used to turn off error throwing when no icon found.
+    // it can be useful when this mixin used as fallback for svg icon.
+    if !$options.optional
+      error('icon ' + $icon + ' was not found!')
     else
-      return
+      warning('icon ' + $icon + ' was not found')
+    return
 
-  if options.pseudo != null && options.pseudo != 'before' && options.pseudo != 'after'
-    error('unknown pseudo option for icon mixin [' + options.pseudo + ']')
-  target-sel = target_sel(options)
+  // check if .pseudo option is correct
+  if $options.pseudo != null && $options.pseudo != 'before' && $options.pseudo != 'after'
+    error('icon: .pseudo option value is invalid [' + $options.pseudo + ']')
 
-  icon-width = lookup('$icon-' + icon + '_width')
-  icon-height = lookup('$icon-' + icon + '_height')
+  $target-sel = target_sel(options)
 
-  props = {}
-  if options.margin-center != null
-    if options.margin-center == 'hor' || options.margin-center == 'both'
-      props['margin-left'] = (-(icon-width / 2))
-    if options.margin-center == 'vert' || options.margin-center == 'both'
-      props['margin-top'] = (-(icon-height / 2))
+  $icon-width = lookup('$icon-' + $icon + '_width')
+  $icon-height = lookup('$icon-' + $icon + '_height')
 
-  if options.pseudo != null
-    if options.margin != null
-      if options.pseudo == 'before'
-        props['margin-right'] = options.margin
-      else if options.pseudo == 'after'
-        props['margin-left'] = options.margin
+  $props = {} // which properties to add to element
 
-    if options.align != null
-      props['vertical-align'] = options.align
+  // generate margin-center values
+  if $options.margin-center != null
+    if $options.margin-center == 'hor' || $options.margin-center == 'both'
+      $props['margin-left'] = (-($icon-width / 2))
+    if $options.margin-center == 'vert' || $options.margin-center == 'both'
+      $props['margin-top'] = (-($icon-height / 2))
 
-  if options.pseudo != null
-    &:{options.pseudo}
+  if $options.pseudo != null
+    // generate icon on pseudoelement
+
+    // generate pseudoelement margin
+    if $options.margin != null
+      if $options.pseudo == 'before'
+        $props['margin-right'] = $options.margin
+      else if $options.pseudo == 'after'
+        $props['margin-left'] = $options.margin
+
+    // generate pseudoelement vertical-align
+    if $options.align != null
+      $props['vertical-align'] = $options.align
+
+    &:{$options.pseudo}
       content ''
-      display inline-block
-      sprite icon-name
-      {props}
+      sprite $icon-name
+      {$props}
+      display: inline-block
       {block}
   else
+    // generate icon on element itself
     display inline-block unless @display
-    sprite icon-name
-    {props}
+    sprite $icon-name
+    {$props}
 
-  if options.hover
-    icon-hover = lookup('$icon-' + icon + '-hover')
-    if icon-hover != null
+  // we can automatically generate hover state if there is icon with conventional name
+  if $options.hover
+    $icon-hover = lookup('$icon-' + $icon + '-hover')
+    if $icon-hover != null
       &:hover
-        &{target-sel}
-          spritePosition icon-hover
+        &{$target-sel}
+          spritePosition $icon-hover
 
-  icon-2x = lookup('$icon-' + icon + '-2x')
-  if icon-2x != null
+  // generate retina icon if there is icon with conventional name
+  $icon-2x = lookup('$icon-' + $icon + '-2x')
+  if $icon-2x != null
     @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)
-      sprite-image-size = image-size(sprite-file-2x)
-      props = {
-        background-position: (icon-2x[2]/2) (icon-2x[3]/2)
-        background-size: (sprite-image-size[0]/2) (sprite-image-size[1]/2)
+      // find generated sprite image path and check if file exists
+      $sprite-file-2x = $sprite-images-prefix + lookup('$icon-' + $icon + '-2x_image')
+      if !file_exists($sprite-file-2x)
+        error('cannot find file ' + $sprite-file-2x)
+
+      // find dimensions of generated sprite file and generate correct background-size for element
+      $sprite-image-size = image-size($sprite-file-2x)
+      $props = {
+        background-position: ($icon-2x[2]/2) ($icon-2x[3]/2)
+        background-size: ($sprite-image-size[0]/2) ($sprite-image-size[1]/2)
       }
 
-      &{target-sel}
-        spriteImage(icon-2x)
-        {props}
+      // output it
+      &{$target-sel}
+        spriteImage($icon-2x)
+        {$props}
 
-      if options.hover
-        icon-2x-hover = lookup('$icon-' + icon + '-2x-hover')
-        if icon-2x-hover != null
+      // check if there is hover for it
+      if $options.hover
+        $icon-2x-hover = lookup('$icon-' + $icon + '-2x-hover')
+        if $icon-2x-hover != null
           &:hover
-            props = {
-              background-position: (icon-2x-hover[2]/2) (icon-2x-hover[3]/2)
+            $props = {
+              background-position: ($icon-2x-hover[2]/2) ($icon-2x-hover[3]/2)
             }
-            &{target-sel}
-              {props}
+
+            &{$target-sel}
+              {$props}
 
 icon-before(name, options = {})
   options.pseudo = before
@@ -428,3 +606,27 @@ icon-svg-after(name, options = {})
   +icon-svg(name, options)
     block
 
+
+/************************************************************
+/** MARGINS
+/************************************************************/
+
+nom-first()
+  &:first-child
+    margin-top 0
+
+nom-last()
+  &:last-child
+    margin-bottom 0
+
+nom-both()
+  nom-first()
+  nom-last()
+
+
+/************************************************************
+/** FONT BOOSTING IN MOBILE BROWSERS
+/************************************************************/
+
+disable-font-boosting()
+  max-height 100000px

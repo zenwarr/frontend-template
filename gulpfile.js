@@ -1,3 +1,5 @@
+"use strict";
+
 var gulp = require('gulp');
 var stylus = require('gulp-stylus');
 var autoprefixer = require('gulp-autoprefixer');
@@ -11,13 +13,33 @@ var addsrc = require('gulp-add-src');
 var ignore = require('gulp-ignore');
 var browser_sync = require('browser-sync');
 var watch = require('gulp-watch');
-var sync = require('gulp-directory-sync');
+var imagemin = require('gulp-imagemin');
+var postcss = require('gulp-postcss');
 
 /************************************************************
  * Options
  ************************************************************/
 
-var concat_3dparty_scripts = true;
+// Options for styles
+
+var styles_input = 'src/styles';
+var styles_output = 'css';
+
+var autoprefixer_options = {
+  browsers: ['last 3 versions', '> 1%', 'Safari >= 5', 'ie >= 8'],
+  remove: false
+};
+
+var postcss_processors = [
+  require('postcss-color-rgba-fallback')
+];
+
+// Options for scripts
+
+var scripts_input = 'src/scripts';
+var scripts_output = 'js';
+var concat_3dparty_scripts = false;
+var concat_output_file = '3rdparty.min.js';
 
 var uglify_options = {
   preserveComments: 'some' /* preserves comments starting with ! or @preserve directive */
@@ -28,25 +50,44 @@ if (concat_3dparty_scripts) {
   var order = require('gulp-order');
 }
 
+// Options for images
+
 var image_copy_delay = 500;
+
+var images_input = 'src/img';
+var images_output = 'img';
+var image_dirs = ['content', 'demo', 'fancybox'];
+
+var imagemin_options = {
+  progressive: true,
+  multipass: true
+};
+
+// Options for sprites
+
+var sprites = [{
+    name: 'sprite'
+  }];
+
+// Options for html
+
+var html_input = 'src/html';
 
 /************************************************************
  * Styles
  ************************************************************/
 
-var styles_input = 'src/styles';
-var styles_output = 'css';
-
-var autoprefixer_options = {
-  browsers: ['last 2 versions', '> 1%', 'ie >= 8'],
-  remove: false
-};
-
 gulp.task('stylus', function() {
   var stream = gulp.src(styles_input + '/*.styl')
       .pipe(plumber())
-      .pipe(stylus())
+      .pipe(stylus({
+              define: {
+
+              },
+              url: 'embedurl'
+            }))
       .pipe(autoprefixer(autoprefixer_options))
+      .pipe(postcss(postcss_processors))
       .pipe(gulp.dest(styles_output));
 });
 
@@ -61,18 +102,13 @@ gulp.task('raw_css', function() {
  * Scripts
  ************************************************************/
 
-var scripts_input = 'src/scripts';
-var scripts_output = 'js';
-var concat_output_file = '3rdparty.min.js';
-
 gulp.task('js', function() {
   var stream = gulp.src(scripts_input + '/*.*')
       .pipe(plumber())
       .pipe(newer(scripts_output))
       .pipe(gulp.dest(scripts_output));
 
-  var thirdparty_stream = gulp.src([scripts_input + '/3rdparty/*.*',
-                                    '!' + scripts_input + '/3rdparty/html5shiv.js']);
+  var thirdparty_stream = gulp.src([scripts_input + '/3rdparty/*.*']);
 
   if (concat_3dparty_scripts) {
     thirdparty_stream = thirdparty_stream
@@ -88,7 +124,7 @@ gulp.task('js', function() {
                 .pipe(gulp.dest(scripts_output));
   } else {
     thirdparty_stream = thirdparty_stream
-                        .pipe(uglify(uglify_options))
+                        //.pipe(uglify(uglify_options))
                         .pipe(gulp.dest(scripts_output));
   }
 });
@@ -96,8 +132,6 @@ gulp.task('js', function() {
 /************************************************************
  * HTML
  ************************************************************/
-
-var html_input = 'src/html';
 
 gulp.task('html', function() {
   var stream = gulp.src(html_input + '/*.html')
@@ -119,15 +153,13 @@ gulp.task('html_partial', function() {
  * Images
  ************************************************************/
 
-var images_input = 'src/img';
-var images_output = 'img';
-var image_dirs = ['content', 'demo', 'fancybox'];
-
 gulp.task('images', function() {
-  gulp.src('')
+  gulp.src(images_input + '/*.*')
       .pipe(plumber())
+      .pipe(newer(images_output))
       .pipe(wait(image_copy_delay))
-      .pipe(sync(images_input, images_output, { printSummary: true }))
+      .pipe(imagemin(imagemin_options))
+      .pipe(gulp.dest(images_output));
 });
 
 for (var j = 0; j < image_dirs.length; ++j) {
@@ -137,10 +169,12 @@ for (var j = 0; j < image_dirs.length; ++j) {
       var input_dir = images_input + '/' + image_dirs[local_j];
       var output_dir = images_output + '/' + image_dirs[local_j];
 
-      gulp.src('')
+      gulp.src(input_dir + '/*.*')
           .pipe(plumber())
+          .pipe(newer(output_dir))
           .pipe(wait(image_copy_delay))
-          .pipe(sync(input_dir, output_dir, { printSummary: true }))
+          .pipe(imagemin(imagemin_options))
+          .pipe(gulp.dest(output_dir));
     });
   })();
 }
@@ -155,13 +189,6 @@ gulp.task('all-images', function() {
 /************************************************************
  * Sprites
  ************************************************************/
-
-var sprites = [{
-    name: 'sprite'
-  }, {
-    name:'sprite2x',
-    css_postfix: '-2x'
-  }];
 
 for (var j = 0; j < sprites.length; ++j) {
   (function() {
@@ -203,15 +230,8 @@ gulp.task('watch', function() {
     server: {
       baseDir: './'
     },
-    files: ['*.html', 'css/*.css', 'js/*.js', 'fonts/*.*', 'img/**/*.*']
-  });
-
-  watch(styles_input + '/**', function() {
-    gulp.start('stylus', 'raw_css');
-  });
-
-  watch(scripts_input + '/**', function() {
-    gulp.start('js');
+    files: ['*.html', 'css/*.css', 'js/*.js', 'fonts/*.*', 'img/**/*.*'],
+    open: false
   });
 
   watch(images_input + '/*.*', function() {
@@ -235,6 +255,14 @@ gulp.task('watch', function() {
       });
     })();
   }
+
+  watch(styles_input + '/**', function() {
+    gulp.start('stylus', 'raw_css');
+  });
+
+  watch(scripts_input + '/**', function() {
+    gulp.start('js');
+  });
 
   watch(html_input + '/*.html', function() {
     gulp.start('html');
