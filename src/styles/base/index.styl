@@ -413,10 +413,10 @@ kill-edge-paddings()
 //////////////////////////////////////////////////////////////////////////////////
 
 // Allows to generate icons from sprites. There is some conventions about icon names.
-// $icon-###            - base icon
-// $icon-###-hover      - icon for element with hover state
-// $icon-###-2x         - icon for displays with 2x pixel density
-// $icon-###-2x-hover   - icon for displays with 2p pixel density and for element with hover state
+// $icon_###            - base icon
+// $icon_###_hover      - icon for element with hover state
+// $icon_###_2x         - icon for displays with 2x pixel density
+// $icon_###_2x_hover   - icon for displays with 2p pixel density and for element with hover state
 
 icon-default-options = {
   hover: false
@@ -450,7 +450,7 @@ icon($icon, options = {})
   $options = merge_defaults(options, icon-default-options)
 
   // check if icon with given name exists
-  $icon-name = lookup('$icon-' + $icon)
+  $icon-name = lookup('$icon_' + $icon)
   if $icon-name == null
     // optional flag can be used to turn off error throwing when no icon found.
     // it can be useful when this mixin used as fallback for svg icon.
@@ -466,8 +466,8 @@ icon($icon, options = {})
 
   $target-sel = target_sel(options)
 
-  $icon-width = lookup('$icon-' + $icon + '_width')
-  $icon-height = lookup('$icon-' + $icon + '_height')
+  $icon-width = lookup('$icon_' + $icon + '_width')
+  $icon-height = lookup('$icon_' + $icon + '_height')
 
   $props = {} // which properties to add to element
 
@@ -506,18 +506,18 @@ icon($icon, options = {})
 
   // we can automatically generate hover state if there is icon with conventional name
   if $options.hover
-    $icon-hover = lookup('$icon-' + $icon + '-hover')
+    $icon-hover = lookup('$icon_' + $icon + '_hover')
     if $icon-hover != null
       &:hover
         &{$target-sel}
           spritePosition $icon-hover
 
   // generate retina icon if there is icon with conventional name
-  $icon-2x = lookup('$icon-' + $icon + '-2x')
+  $icon-2x = lookup('$icon_' + $icon + '_2x')
   if $icon-2x != null
     @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)
       // find generated sprite image path and check if file exists
-      $sprite-file-2x = $sprite-images-prefix + lookup('$icon-' + $icon + '-2x_image')
+      $sprite-file-2x = $sprite-images-prefix + lookup('$icon_' + $icon + '_2x_image')
       if !file_exists($sprite-file-2x)
         error('cannot find file ' + $sprite-file-2x)
 
@@ -535,7 +535,7 @@ icon($icon, options = {})
 
       // check if there is hover for it
       if $options.hover
-        $icon-2x-hover = lookup('$icon-' + $icon + '-2x-hover')
+        $icon-2x-hover = lookup('$icon_' + $icon + '_2x_hover')
         if $icon-2x-hover != null
           &:hover
             $props = {
@@ -561,7 +561,7 @@ icon-svg(name, options = {})
 
   icon(name, options)
 
-  svg_path = '../../img/icon-' + name + '.svg'
+  svg_path = '../../img/icon_' + name + '.svg'
   if file_exists(svg_path)
     if target-sel == ''  // lets stylus merge this into previous selector
       background url(svg_path) 0 0 no-repeat, none
@@ -576,17 +576,17 @@ icon-svg(name, options = {})
   if options.hover
     &:hover
       &{target-sel}
-        svg_path = '../../img/icon-' + name + '-hover.svg'
+        svg_path = '../../img/icon_' + name + '_hover.svg'
         if file_exists(svg_path)
           background url(svg_path) 0 0 no-repeat, none
         else
-          icon-hover = lookup('$icon-' + name + '-hover')
+          icon-hover = lookup('$icon_' + name + '_hover')
           if icon-hover != null
             warn('no svg file for hover state (while sprite fallback is available)')
             spriteImage icon-hover
             spritePosition icon-hover
 
-          icon-hover-2x = lookup('$icon-' + name + '-2x-hover')
+          icon-hover-2x = lookup('$icon_' + name + '_2x_hover')
           if icon-hover-2x != null
             warn('no svg file for hover state (while 2x sprite fallback is available)')
             @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)
@@ -630,3 +630,22 @@ nom-both()
 
 disable-font-boosting()
   max-height 100000px
+
+/************************************************************
+/** CODE BLOCK IF CURRENT ELEMENT IS LINK
+/************************************************************/
+
+iflink()
+  / a&
+    {block}
+
+/************************************************************
+/** ANOTHER USEFUL MIXINS
+/************************************************************/
+
+hide-slick-slides()
+  &:not(:first-child)
+    display none
+
+    / .slick-initialized &
+      display block

@@ -204,6 +204,7 @@ for (var j = 0; j < sprites.length; ++j) {
             padding: 4,
             imgPath: '../img/sprites/' + spr_data.name + '.png',
             cssVarMap: function(sprite) {
+              sprite.name = 'icon_' + sprite.name;
               if (spr_data.css_postfix != undefined)
                 sprite.name = sprite.name + spr_data.css_postfix;
             }
