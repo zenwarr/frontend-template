@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "outDir": "./js",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "module": "commonjs",
+    "target": "es5",
+    "lib": [
+      "dom",
+      "es5",
+      "es2015.iterable"
+    ]
+  },
+  "include": [
+    "./src/scripts/**/*",
+    "./src/scripts/types/*.d.ts"
+  ]
+}

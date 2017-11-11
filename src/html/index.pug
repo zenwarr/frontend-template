@@ -1,0 +1,13 @@
+doctype html
+html
+  include partial/head
+
+  body
+    form.form-contact.js-validate
+      .input.input--def
+        input.input__input(type=text placeholder='Name' required)
+
+      .input.input--def
+        input.input__input(type=email placeholder='E-mail' required)
+
+    include partial/scripts

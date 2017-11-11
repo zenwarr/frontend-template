@@ -1,0 +1,33 @@
+body {
+  display: block;
+  background: black;
+  color: white;
+}
+
+.block {
+  &__elem {
+    &--mod {
+      background: red;
+    }
+  }
+}
+
+.form-contact {
+  padding: 50px;
+}
+
+.input--def {
+  margin-bottom: 10px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .input__input {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    padding: 10px;
+    border: 0;
+  }
+}

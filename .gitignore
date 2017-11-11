@@ -5,16 +5,7 @@ node_modules
 .idea
 
 # содержимое следующих директорий будет сгенерировано из исходников
-/img
-/js
-/css
-/img-mob
-/js-mob
-/css-mob
-/*.html
-
-# файлы сгенерированных спрайтов
-/src/styles/sprites/*
+/dist
 
 # psd
 /psd
