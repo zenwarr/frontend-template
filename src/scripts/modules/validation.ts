@@ -1,40 +1,247 @@
 import * as validate from 'validate.js';
+import './utils'; // for polyfills
 
 export function initValidation(): void {
   let forms = document.querySelectorAll('form.js-validate');
   for (let q = 0; q < forms.length; ++q) {
     new FormValidator(forms[q] as HTMLFormElement);
   }
+
+  (validate as any).options = {
+    fullMessages: false
+  };
+}
+
+type ValidationConstraints =  { [name: string]: any };
+
+interface InputData {
+  elem: Element;
+  ib: Element|null;
+  inputBlock: Element|null;
+  errorElement: Element|null;
 }
 
 export class FormValidator {
-  constructor(public form: HTMLFormElement) {
-    form.addEventListener('submit', this.onSubmit.bind(this));
+  constructor(protected _form: HTMLFormElement) {
+    this._form.addEventListener('submit', this.onSubmit.bind(this));
+    this._form.setAttribute('novalidate', '');
+  }
 
+  onSubmit(e: Event): boolean {
+    e.preventDefault();
+    this.validate();
+    return false;
+  }
+
+  validate(): boolean {
+    let errors = validate(this._form, this.constraints);
+
+    let hasErrors = errors != null;
+    this.setFormHasErrors(hasErrors);
+    this.showErrors(errors);
+    this._beginLiveValidation();
+    return hasErrors;
+  }
+
+  validateSingle(elemName: string): boolean {
+    if (!this._constraints || !this._elems) {
+      this._buildConstraints();
+    }
+
+    let elemData = this._elems ? this._elems[elemName] : null;
+    if (!elemData) {
+      console.warn(`element with name ${name} has not been found while validating a single element`);
+      return true;
+    }
+
+    let constraint = this._constraints ? this._constraints[elemName] : null;
+
+    let error: string|null = null;
+    if (constraint) {
+      error = validate.single(this._getInputValue(elemData.elem), constraint);
+    }
+
+    this.setFormHasErrors(error != null);
+
+    if (error) {
+      this.setError(error, elemData);
+    } else {
+      this.clearError(elemData);
+    }
+
+    return error != null;
+  }
+
+  showErrors(errors: any): void {
+    if (!this._elems) {
+      console.warn('Invalid showErrors call: no elements has been collected');
+      return;
+    }
+
+    for (let elem_name of Object.keys(this._elems)) {
+      if (errors[elem_name] != null) {
+        this.setError(errors[elem_name], this._elems[elem_name]);
+      } else {
+        this.clearError(this._elems[elem_name]);
+      }
+    }
+  }
+
+  setError(msg: string, elem: InputData): void {
+    // set titles
+    elem.elem.setAttribute('title', msg);
+    if (elem.errorElement) {
+      let msgNode = document.createTextNode(msg);
+      elem.errorElement.innerHTML = '';
+      elem.errorElement.appendChild(msgNode);
+      elem.errorElement.setAttribute('title', msg);
+    }
+
+    // set classes
+    if (elem.ib) {
+      elem.ib.classList.add('ib--error');
+    }
+
+    if (elem.inputBlock) {
+      elem.inputBlock.classList.add('input--error');
+    }
+  }
+
+  clearError(elem: InputData): void {
+    // clear titles
+    elem.elem.setAttribute('title', '');
+    if (elem.errorElement) {
+      elem.errorElement.innerHTML = '';
+      elem.errorElement.setAttribute('title', '');
+    }
+
+    // clear error classes
+    if (elem.ib) {
+      elem.ib.classList.remove('ib--error');
+    }
+
+    if (elem.inputBlock) {
+      elem.inputBlock.classList.remove('input--error');
+    }
+  }
+
+  get constraints(): ValidationConstraints {
+    if (!this._constraints) {
+      this._buildConstraints();
+    }
+    return this._constraints as ValidationConstraints;
+  }
+
+  get form(): HTMLFormElement {
+    return this._form;
+  }
+
+  /** Protected area **/
+
+  protected _buildInputData(elem: Element): InputData {
+    let ib = elem.closest('.ib');
+    let inputBlock = elem.closest('.input');
+    let errorElement: Element|null = (inputBlock && inputBlock.querySelector('.input__error'))
+                                      || (ib && ib.querySelector('.ib__error'));
+    if (!errorElement) {
+      // construct new error element and add it to .ib (by default) or to .input (if .ib does not exist)
+      errorElement = document.createElement('div');
+
+      if (ib) {
+        errorElement.classList.add('ib__error');
+        ib.appendChild(errorElement);
+      } else if (inputBlock) {
+        errorElement.classList.add('input__error');
+        inputBlock.appendChild(errorElement);
+      }
+    }
+
+    return {
+      elem: elem,
+      ib,
+      inputBlock,
+      errorElement
+    }
+  }
+
+  protected _getElementMsg(elem: Element, msgClass: string, def: string): string {
+    return elem.getAttribute('data-msg-' + msgClass) || def;
+  }
+
+  protected _buildConstraints() {
     let elems = this.form.querySelectorAll('[name]');
+
+    this._constraints = { };
+    this._elems = { };
     for (let q = 0; q < elems.length; ++q) {
       let elem = elems[q];
       let elem_name = elem.getAttribute('name');
       if (!elem_name) {
+        console.warn(`No name for element`, elem);
         continue;
       }
 
-      let constrain: { [name: string]: any } = {
-        presence: elem.hasAttribute('required')
-      };
+      this._elems[elem_name] = this._buildInputData(elem);
+
+      let constrain: { [name: string]: any } = { };
+      if (elem.hasAttribute('required')) {
+        constrain.presence = {
+          message: this._getElementMsg(elem, 'required', 'Укажите значение')
+        }
+      }
+
+      if (elem.hasAttribute('minlength')) {
+        let minlength = +(elem.getAttribute('minlength') as string);
+        constrain.length = {
+          minimum: minlength,
+          message: this._getElementMsg(elem, 'minlength', `Укажите значение длиннее ${minlength} символов`)
+        };
+      }
+
+      if (elem.hasAttribute('pattern')) {
+        constrain.format = {
+          pattern: elem.getAttribute('pattern') as string,
+          message: this._getElementMsg(elem, 'pattern', 'Укажите значение в нужном формате')
+        };
+      }
 
       switch (elem.tagName.toLowerCase()) {
         case 'input': {
           switch ((elem.getAttribute('type') || 'text').toLowerCase()) {
             case 'email':
-              constrain.email = true;
-              break;
-
-            case 'number':
-              constrain.format = {
-
+              constrain.email = {
+                message: this._getElementMsg(elem, 'email', 'Укажите корректный e-mail')
               };
               break;
+
+            case 'number': {
+              constrain.numericality = { };
+
+              let min: number|null = null, max: number|null = null;
+
+              if (elem.hasAttribute('min')) {
+                min = +(elem.getAttribute('min') as string);
+                constrain.numericality.greaterThanOrEqualTo = min;
+              }
+
+              if (elem.hasAttribute('max')) {
+                max = +(elem.getAttribute('max') as string);
+                constrain.numericality.lessThanOrEqualTo = max;
+              }
+
+              let defMsg: string;
+              if (min == null && max == null) {
+                defMsg = `Введите число`;
+              } else if (min != null && max != null) {
+                defMsg = `Введите число в диапазоне от ${min} до ${max}`;
+              } else if (min != null) {
+                defMsg = `Введите число не меньше ${min}`;
+              } else {
+                defMsg = `Введите число не больше ${max}`;
+              }
+
+              constrain.numericality.message = this._getElementMsg(elem, 'number', defMsg);
+            } break;
           }
         } break;
 
@@ -47,93 +254,42 @@ export class FormValidator {
           break;
       }
 
-      this.constraints[elem_name] = constrain;
+      this._constraints[elem_name] = constrain;
     }
   }
 
-  onSubmit(e: Event): void {
-    if (!this.validate()) {
-      e.preventDefault();
+  protected _beginLiveValidation(): void {
+    if (this._liveValidation) {
+      return;
     }
+
+    if (!this._elems) {
+      this._buildConstraints();
+    }
+
+    for (let elemName of Object.keys(this._elems as any)) {
+      let elemData = (this._elems as any)[elemName];
+      elemData.elem.addEventListener('change', this.onElementChange.bind(this, elemName));
+      elemData.elem.addEventListener('input', this.onElementChange.bind(this, elemName));
+    }
+
+    this._liveValidation = true;
   }
 
-  validate(): boolean {
-    throw new Error("Method not implemented");
+  protected onElementChange(elemName: string, e: Event): void {
+    this.validateSingle(elemName);
   }
 
-  setError(msg: string, elem: HTMLElement): void {
-    throw new Error("Method not implemented");
+  protected setFormHasErrors(hasErrors: boolean) {
+    this._form.classList.toggle('form--has-errors', hasErrors);
   }
 
-  protected constraints: { [name: string]: any } = { };
+  protected _getInputValue(elem: Element): string|null {
+    let value = (elem as HTMLInputElement).value;
+    return value == null || value === '' ? null : value;
+  }
+
+  protected _constraints: ValidationConstraints|null = null;
+  protected _elems: { [name: string]: InputData }|null = null;
+  protected _liveValidation: boolean = false;
 }
-
-// import ValidationOptions = JQueryValidation.ValidationOptions;
-// import * as $ from 'jquery';
-// import 'jquery-validation/dist/jquery.validate.js';
-//
-// export function initValidation(): void {
-//   $.validator.setDefaults({
-//     ignore: ''
-//   });
-//
-//   $.validator.addMethod('requiredphone', (value: string): boolean => {
-//     return value.replace(/\D+/g, '').length > 1;
-//   }, "Заполните это поле");
-//
-//   $.validator.addMethod("minlenghtphone", function (value: string): boolean {
-//     return value.replace(/\D+/g, '').length > 10;
-//   }, "Неверный формат номера");
-//
-//   let forms_to_validate = document.getElementsByClassName('js-validate');
-//   for (let q = 0; q < forms_to_validate.length; ++q) {
-//     $(forms_to_validate[q]).validate(buildValidationOptions());
-//   }
-// }
-//
-// function buildValidationOptions(inputOptions?: ValidationOptions): ValidationOptions {
-//   inputOptions = inputOptions || {};
-//
-//   return $.extend({
-//     onfocusout: false,
-//     onsubmit: true,
-//     rules: {
-//       tel: {
-//         requiredphone: true,
-//         minlenghtphone: true
-//       },
-//       password: 'required',
-//       password_repeat: {
-//         equalTo: '[name=password]'
-//       }
-//     },
-//     errorElement: 'span',
-//     errorClass: 'ib__error',
-//     errorPlacement: ($errorElement: JQuery, $target: JQuery): void => {
-//       // $target is the input element on which error was triggered
-//       // $errorElement is .input__error element which hold error message
-//       $errorElement.attr('title', $errorElement.text());
-//       $target.attr('title', $errorElement.text());
-//
-//       let $input = $target.closest('.input');
-//       if ($input.length > 0 && ($input[0] as HTMLElement).hasAttribute('data-pin-error')) {
-//         $errorElement.addClass('input__error');
-//         $input.append($errorElement);
-//       } else {
-//         $target.closest('.ib').append($errorElement);
-//       }
-//     }, highlight: (element: HTMLElement, errorClass: string, validClass: string): void => {
-//       $(element).closest('.input').addClass('input--error');
-//       $(element).closest('.ib').addClass('ib--error');
-//     }, unhighlight: (element: HTMLElement, errorClass: string, validClass: string): void => {
-//       $(element).closest('.input').removeClass('input--error');
-//       $(element).closest('.ib').removeClass('ib--error');
-//       $(element).removeAttr('title');
-//     },
-//     invalidHandler: () => setTimeout(() => $('.js-select').trigger('refresh'), 1),
-//     success: ($label: JQuery): void => {
-//       $label.closest('.input').addClass('input--ok');
-//       $label.closest('.ib').addClass('ib--ok');
-//     }
-//   }, inputOptions);
-// }

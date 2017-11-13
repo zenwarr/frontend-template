@@ -10,6 +10,8 @@ const tsify = require('tsify');
 const source = require('vinyl-source-stream');
 const sass = require('gulp-sass');
 const watch = require('gulp-watch');
+const buffer = require('vinyl-buffer');
+const sourcemaps = require('gulp-sourcemaps');
 
 /************************************************************
  * Options
@@ -17,7 +19,7 @@ const watch = require('gulp-watch');
 
 const browser_sync = require('browser-sync').create();
 
-const DEBUG_BUILD = false;
+const DEBUG_BUILD = true;
 
 const IMAGES_INPUT = 'src/img';
 const IMAGES_OUTPUT = 'dist/img';
@@ -74,8 +76,17 @@ gulp.task('scripts', () => {
     cache: { },
     packageCache: { }
   }).plugin(tsify)
+    .on('error', (err) => console.error('JS: ', err))
     .bundle()
     .pipe(source('index.js'))
+    .pipe(buffer())
+    .pipe(sourcemaps.init({ loadMaps: true }))
+    .pipe(sourcemaps.write({
+      includeContent: false,
+      sourceRoot: file => {
+        return path.join(__dirname, 'src/scripts')
+      }
+    }))
     .pipe(gulp.dest(SCRIPTS_OUTPUT));
 });
 

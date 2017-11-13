@@ -5,9 +5,15 @@ html
   body
     form.form-contact.js-validate
       .input.input--def
-        input.input__input(type=text placeholder='Name' required)
+        input.input__input(type="text" placeholder='Name' name="name" required)
 
       .input.input--def
-        input.input__input(type=email placeholder='E-mail' required)
+        input.input__input(type="email" placeholder='E-mail' name="email" required data-msg-email="Это что, e-mail такой?")
+
+      .input.input--def
+        input.input__input(type="number" min=10 max=20 required name="number" placeholder="A number" data-msg-number="Цена должна быть в диапазоне от 10 до 20!")
+
+      .btn-cont
+        button(type=submit) Submit the form
 
     include partial/scripts

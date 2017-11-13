@@ -23,11 +23,13 @@
     "gulp-postcss": "^7.0.0",
     "gulp-pug": "^3.3.0",
     "gulp-sass": "^3.1.0",
+    "gulp-sourcemaps": "^2.6.1",
     "gulp-watch": "^4.3.11",
     "node-sass": "^4.5.3",
     "postcss-discard-comments": "^2.0.4",
     "postcss-nested": "^2.1.2",
-    "typescript": "^2.6.1"
+    "typescript": "^2.6.1",
+    "vinyl-buffer": "^1.0.0"
   },
   "dependencies": {
     "@types/jquery.validation": "^1.16.3",
