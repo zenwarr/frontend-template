@@ -4,6 +4,7 @@
   "description": "",
   "main": "gulpfile.js",
   "scripts": {
+    "build-production": "gulp default",
     "dev": "gulp watch"
   },
   "author": "zenwarr",
@@ -13,31 +14,34 @@
   },
   "devDependencies": {
     "autoprefixer": "^7.1.6",
-    "babel": "^6.23.0",
-    "babel-core": "^6.26.0",
-    "browser-sync": "^2.18.13",
-    "browserify": "^14.5.0",
+    "browser-sync": "^2.23.1",
+    "bundle-loader": "^0.5.5",
     "gulp": "^3.9.1",
-    "gulp-babel": "^7.0.0",
-    "gulp-jsbeautifier": "^2.1.1",
-    "gulp-postcss": "^7.0.0",
-    "gulp-pug": "^3.3.0",
+    "gulp-data": "^1.2.1",
+    "gulp-ext-replace": "^0.3.0",
+    "gulp-hb": "^7.0.0",
+    "gulp-imagemin": "^4.1.0",
+    "gulp-newer": "^1.3.0",
+    "gulp-postcss": "^7.0.1",
     "gulp-sass": "^3.1.0",
-    "gulp-sourcemaps": "^2.6.1",
+    "gulp-svg-sprites": "^4.1.2",
+    "gulp-svgmin": "^1.2.4",
+    "gulp-wait": "0.0.2",
     "gulp-watch": "^4.3.11",
+    "handlebars-inline": "^1.0.0",
+    "handlebars-layouts": "^3.1.4",
+    "imports-loader": "^0.7.1",
     "node-sass": "^4.5.3",
     "postcss-discard-comments": "^2.0.4",
-    "postcss-nested": "^2.1.2",
+    "ts-loader": "^3.2.0",
     "typescript": "^2.6.1",
-    "vinyl-buffer": "^1.0.0"
+    "uglifyjs-webpack-plugin": "^1.1.5",
+    "vinyl-named": "^1.1.0",
+    "webpack": "^3.10.0",
+    "webpack-stream": "^4.0.0"
   },
   "dependencies": {
-    "@types/jquery.validation": "^1.16.3",
-    "@types/lodash.throttle": "^4.1.3",
-    "@types/validate.js": "0.0.2",
-    "jquery-validation": "^1.17.0",
-    "lodash.throttle": "^4.1.1",
-    "validate.js": "^0.12.0"
+
   },
   "engines": {
     "node": ">=6.0.0"

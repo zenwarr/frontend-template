@@ -1,36 +1,40 @@
 "use strict";
 
 const path = require('path');
+const fs = require('fs');
 const gulp = require('gulp');
+const gdata = require('gulp-data');
+const ext_replace = require('gulp-ext-replace');
 const postcss = require('gulp-postcss');
-const pug = require('gulp-pug');
-const beautify = require('gulp-jsbeautifier');
-const browserify = require('browserify');
-const tsify = require('tsify');
-const source = require('vinyl-source-stream');
+const handlebars = require('gulp-hb');
 const sass = require('gulp-sass');
 const watch = require('gulp-watch');
-const buffer = require('vinyl-buffer');
-const sourcemaps = require('gulp-sourcemaps');
+const webpack_stream = require('webpack-stream');
+const webpack = require('webpack');
+const webpack_uglify_plugin = require('uglifyjs-webpack-plugin');
+const named = require('vinyl-named');
+const wait = require('gulp-wait');
+const newer = require('gulp-newer');
+const imagemin = require('gulp-imagemin');
+const svgSprites = require('gulp-svg-sprites');
+const svgmin = require('gulp-svgmin');
 
 /************************************************************
  * Options
  ************************************************************/
 
+let debugBuild = true;
+let watching = false;
+
+/************************************************************
+ * Live updating
+ ************************************************************/
+
+function live_update(stream) {
+  stream.on('end', browser_sync.reload);
+}
+
 const browser_sync = require('browser-sync').create();
-
-const DEBUG_BUILD = true;
-
-const IMAGES_INPUT = 'src/img';
-const IMAGES_OUTPUT = 'dist/img';
-const IMAGE_DIRS = [
-    'content', 'demo', 'tmp'
-];
-
-const IMAGEMIN_OPTIONS = {
-  progressive: true,
-  multipass: true
-};
 
 /************************************************************
  * Styles
@@ -60,6 +64,10 @@ gulp.task('raw_styles', () => {
                             .pipe(gulp.dest(STYLES_OUTPUT)));
 });
 
+gulp.task('all_styles', () => {
+  gulp.start('styles', 'raw_styles');
+});
+
 /************************************************************
  * Scripts
  ************************************************************/
@@ -68,31 +76,64 @@ const SCRIPTS_INPUT = 'src/scripts';
 const THIRDPARTY_SCRIPTS_INPUT = path.join(SCRIPTS_INPUT, '3rdparty');
 const SCRIPTS_OUTPUT = 'dist/js';
 
+const ENTRY_SCRIPTS = [
+  'index.ts'
+];
+
+function generateWebpackConfig(input) {
+  let outputFilename = input.replace(/.tsx?$/, '.js');
+
+  let plugins = [ ];
+
+  if (!debugBuild) {
+    plugins.push(new webpack_uglify_plugin());
+  }
+
+  return {
+    entry: path.join(__dirname, SCRIPTS_INPUT, input),
+    output: {
+      filename: outputFilename,
+      path: path.join(__dirname, SCRIPTS_OUTPUT),
+      libraryTarget: 'var'
+    },
+    devtool: debugBuild ? 'source-map' : undefined,
+    target: 'web',
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.json', '.webpack.js']
+    },
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          loader: 'ts-loader'
+        }
+      ]
+    },
+    watch: watching,
+    watchOptions: {
+      ignored: /node_modules/,
+      aggregateTimeout: 750
+    },
+    plugins
+  }
+}
+
 gulp.task('scripts', () => {
-  return browserify({
-    basedir: '.',
-    debug: DEBUG_BUILD,
-    entries: ['src/scripts/index.ts'],
-    cache: { },
-    packageCache: { }
-  }).plugin(tsify)
-    .on('error', (err) => console.error('JS: ', err))
-    .bundle()
-    .pipe(source('index.js'))
-    .pipe(buffer())
-    .pipe(sourcemaps.init({ loadMaps: true }))
-    .pipe(sourcemaps.write({
-      includeContent: false,
-      sourceRoot: file => {
-        return path.join(__dirname, 'src/scripts')
-      }
-    }))
-    .pipe(gulp.dest(SCRIPTS_OUTPUT));
+  for (let inputFile of ENTRY_SCRIPTS) {
+    gulp.src(path.join(SCRIPTS_INPUT, inputFile))
+      .pipe(named())
+      .pipe(webpack_stream(generateWebpackConfig(inputFile)))
+      .pipe(gulp.dest(SCRIPTS_OUTPUT))
+  }
 });
 
 gulp.task('scripts_3rd', () => {
   gulp.src(path.join(THIRDPARTY_SCRIPTS_INPUT, '*.js'))
       .pipe(gulp.dest(SCRIPTS_OUTPUT));
+});
+
+gulp.task('all_scripts', () => {
+  gulp.start('scripts', 'scripts_3rd');
 });
 
 /************************************************************
@@ -101,34 +142,100 @@ gulp.task('scripts_3rd', () => {
 
 const HTML_INPUT = 'src/html';
 const HTML_OUTPUT = 'dist';
-const HTML_BEAUTIFY_OPTIONS = {
-  indent_size: 2,
-  indent_char: ' ',
-  end_with_newline: true,
-  wrap_line_length: 60,
-  unformatted: []
-};
 
 gulp.task('html', () => {
-  live_update(gulp.src(path.join(HTML_INPUT, '*.pug'))
-                  .pipe(pug().on('error', err => console.error('PUG: ', err.message)))
-                  .pipe(beautify(HTML_BEAUTIFY_OPTIONS))
-                  .pipe(gulp.dest(HTML_OUTPUT)));
+  live_update(gulp.src(path.join(HTML_INPUT, '*.hbs'))
+    .pipe(gdata(file => {
+      let data_file = path.join(HTML_INPUT, 'data', path.basename(file.path, '.hbs') + '.json');
+      return fs.existsSync(data_file) ? require(path.join(__dirname, data_file)) : { };
+    }))
+    .pipe(handlebars({
+      partials: path.join(HTML_INPUT, 'partials/*.hbs'),
+      helpers: path.join(HTML_INPUT, 'helpers/*.js'),
+      data: path.join(HTML_INPUT, 'data/common/*.json'),
+      bustCache: true
+    }).helpers(require('handlebars-inline'))
+      .helpers(require('handlebars-layouts'))
+      .on('error', (err) => console.error(err)))
+    .pipe(ext_replace('.html'))
+    .pipe(gulp.dest(HTML_OUTPUT)));
 });
 
-function live_update(stream) {
-  stream.on('end', browser_sync.reload);
+gulp.task('all_html', () => {
+  gulp.start('html');
+});
+
+/************************************************************
+ * Images
+ ************************************************************/
+
+const IMAGES_INPUT = 'src/img';
+const IMAGES_OUTPUT = 'dist/img';
+const IMAGE_DIRS = [
+  'content', 'demo', 'tmp'
+];
+const SVG_SPRITES_INPUT = 'src/svg';
+const SVG_SPRITE_OUTPUT = 'dist/img/svg-sprites';
+const IMAGE_COPY_DELAY = 500;
+
+const IMAGEMIN_OPTIONS = {
+  progressive: true,
+  multipass: true
+};
+
+function createImageTask(taskName, dir) {
+  let outputDir = path.join(IMAGES_OUTPUT, dir);
+
+  return gulp.task(taskName, () => {
+    live_update(gulp.src(path.join(IMAGES_INPUT, dir, '*.*'))
+      .pipe(newer(outputDir))
+      .pipe(wait(IMAGE_COPY_DELAY))
+      .pipe(imagemin(IMAGEMIN_OPTIONS))
+      .pipe(gulp.dest(outputDir)));
+  });
 }
+
+createImageTask('images', '');
+IMAGE_DIRS.map(dir => createImageTask(`images-${dir}`, dir));
+
+gulp.task('svg-sprites', () => {
+  live_update(gulp.src(path.join(SVG_SPRITES_INPUT, '*.svg'))
+    .pipe(svgmin())
+    .pipe(svgSprites({
+      mode: 'defs',
+      selector: 'i-%f',
+      preview: false
+    }))
+    .pipe(gulp.dest(SVG_SPRITE_OUTPUT)));
+});
+
+gulp.task('all_images', () => {
+  gulp.start('images', 'svg-sprites', ...IMAGE_DIRS.map(dir => `images-${dir}`));
+});
 
 /************************************************************
  * Tasks
  ************************************************************/
 
+gulp.task('all', () => {
+  gulp.start('all_images', 'all_styles', 'all_scripts', 'all_html');
+});
+
 gulp.task('default', () => {
-  gulp.start('styles', 'scripts', 'scripts_3rd', 'html');
+  debugBuild = false;
+  gulp.start('all');
+});
+
+gulp.task('build-dev', () => {
+  debugBuild = true;
+  gulp.start('all');
 });
 
 gulp.task('watch', () => {
+  watching = true;
+
+  gulp.start('all');
+
   browser_sync.init({
     server: {
       baseDir: './dist'
@@ -136,14 +243,16 @@ gulp.task('watch', () => {
     open: false
   });
 
-  // watch(path.join(IMAGES_OUTPUT, '*.*'), () => gulp.start('images'));
-  // for (let j = 0; j < IMAGE_DIRS.length; ++j) {
-  //   (image_dir =>
-  //     watch(path.join(IMAGES_INPUT, image_dir, '*.*'), () => gulp.start('images-' + image_dir))
-  //   )(IMAGE_DIRS[j]);
-  // }
+  watch(path.join(IMAGES_OUTPUT, '*.*'), () => gulp.start('images'));
+  for (let dir of IMAGE_DIRS) {
+    let taskName = `images-${dir}`;
+    watch(path.join(IMAGES_INPUT, dir, '*.*'), () => gulp.start(taskName));
+  }
+  watch(path.join(SVG_SPRITES_INPUT, '*.svg'), () => gulp.start('svg-sprites'));
 
   watch(path.join(STYLES_INPUT, '**'), () => gulp.start('styles', 'raw_styles'));
   watch(path.join(SCRIPTS_INPUT, '**'), () => gulp.start('scripts', 'scripts_3rd'));
   watch(path.join(HTML_INPUT, '**'), () => gulp.start('html'));
+
+  browser_sync.reload();
 });

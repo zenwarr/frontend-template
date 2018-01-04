@@ -1,5 +1,3 @@
-import {initValidation} from "./modules/validation";
-
 document.addEventListener('DOMContentLoaded', () => {
-  initValidation();
+  // write code here
 });

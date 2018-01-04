@@ -1,33 +1,22 @@
-body {
-  display: block;
-  background: black;
-  color: white;
-}
+.js-map {
+  background: lightgray;
 
-.block {
-  &__elem {
-    &--mod {
-      background: red;
-    }
+  &__map {
+    height: 500px;
+    background: lightgray;
+  }
+
+  &__point {
+    display: none;
   }
 }
 
-.form-contact {
-  padding: 50px;
-}
-
-.input--def {
-  margin-bottom: 10px;
-
-  &:last-child {
-    margin-bottom: 0;
+.js-tabs--inited {
+  .js-tabs__tab {
+    display: none;
   }
 
-  .input__input {
+  .js-tabs__tab--active {
     display: block;
-    width: 100%;
-    max-width: 300px;
-    padding: 10px;
-    border: 0;
   }
 }
