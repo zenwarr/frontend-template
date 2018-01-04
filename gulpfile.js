@@ -26,6 +26,10 @@ const svgmin = require('gulp-svgmin');
 let debugBuild = true;
 let watching = false;
 
+function getDirs(baseDir) {
+  return fs.readdirSync(baseDir).filter(filename => fs.statSync(path.join(baseDir, filename)).isDirectory());
+}
+
 /************************************************************
  * Live updating
  ************************************************************/
@@ -171,14 +175,10 @@ gulp.task('all_html', () => {
 
 const IMAGES_INPUT = 'src/img';
 const IMAGES_OUTPUT = 'dist/img';
-const IMAGE_DIRS = [
-  'content', 'demo', 'tmp'
-];
+const IMAGE_DIRS = getDirs(IMAGES_INPUT);
 const SVG_SPRITES_INPUT = 'src/svg';
 const SVG_SPRITE_OUTPUT = 'dist/img/svg-sprites';
-const SVG_SPRITES = [
-  'def'
-];
+const SVG_SPRITES = getDirs(SVG_SPRITES_INPUT);
 const IMAGE_COPY_DELAY = 500;
 
 const IMAGEMIN_OPTIONS = {
@@ -202,7 +202,6 @@ createImageTask('images', '');
 IMAGE_DIRS.map(dir => createImageTask(`images_${dir}`, dir));
 
 function createSvgTask(taskName, dir) {
-  console.log(taskName, dir);
   return gulp.task(taskName, () => {
     live_update(gulp.src(path.join(SVG_SPRITES_INPUT, dir, '*.svg'))
       .pipe(svgSprites({
