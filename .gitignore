@@ -5,7 +5,7 @@ node_modules
 .idea
 TODO.MD
 
-# содержимое следующих директорий будет сгенерировано из исходников
+# Files in the following dirs are generated from sources
 /dist
 
 # psd
