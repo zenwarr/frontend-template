@@ -143,7 +143,7 @@ gulp.task('all_scripts', () => {
 const HTML_INPUT = 'src/html';
 const HTML_OUTPUT = 'dist';
 
-gulp.task('html', () => {
+gulp.task('html', ['all_svg_sprites'], () => {
   live_update(gulp.src(path.join(HTML_INPUT, '*.hbs'))
     .pipe(gdata(file => {
       let data_file = path.join(HTML_INPUT, 'data', path.basename(file.path, '.hbs') + '.json');
@@ -154,7 +154,7 @@ gulp.task('html', () => {
       helpers: path.join(HTML_INPUT, 'helpers/*.js'),
       data: path.join(HTML_INPUT, 'data/common/*.json'),
       bustCache: true
-    }).helpers(require('handlebars-inline'))
+    }).helpers(require('handlebars-inline-file'))
       .helpers(require('handlebars-layouts'))
       .on('error', (err) => console.error(err)))
     .pipe(ext_replace('.html'))
@@ -176,6 +176,9 @@ const IMAGE_DIRS = [
 ];
 const SVG_SPRITES_INPUT = 'src/svg';
 const SVG_SPRITE_OUTPUT = 'dist/img/svg-sprites';
+const SVG_SPRITES = [
+  'def'
+];
 const IMAGE_COPY_DELAY = 500;
 
 const IMAGEMIN_OPTIONS = {
@@ -196,21 +199,33 @@ function createImageTask(taskName, dir) {
 }
 
 createImageTask('images', '');
-IMAGE_DIRS.map(dir => createImageTask(`images-${dir}`, dir));
+IMAGE_DIRS.map(dir => createImageTask(`images_${dir}`, dir));
 
-gulp.task('svg-sprites', () => {
-  live_update(gulp.src(path.join(SVG_SPRITES_INPUT, '*.svg'))
-    .pipe(svgmin())
-    .pipe(svgSprites({
-      mode: 'defs',
-      selector: 'i-%f',
-      preview: false
-    }))
-    .pipe(gulp.dest(SVG_SPRITE_OUTPUT)));
+function createSvgTask(taskName, dir) {
+  console.log(taskName, dir);
+  return gulp.task(taskName, () => {
+    live_update(gulp.src(path.join(SVG_SPRITES_INPUT, dir, '*.svg'))
+      .pipe(svgSprites({
+        mode: 'symbols',
+        preview: false,
+        svgId: 'i-%f',
+        svg: {
+          symbols: 'symbols.svg',
+          defs: 'defs.svg'
+        }
+      }))
+      .pipe(gulp.dest(path.join(SVG_SPRITE_OUTPUT, dir))));
+  });
+}
+
+SVG_SPRITES.map(dir => createSvgTask(`svg_sprite_${dir}`, dir));
+
+gulp.task('all_svg_sprites', () => {
+  gulp.start(...SVG_SPRITES.map(dir => `svg_sprite_${dir}`));
 });
 
 gulp.task('all_images', () => {
-  gulp.start('images', 'svg-sprites', ...IMAGE_DIRS.map(dir => `images-${dir}`));
+  gulp.start('images', 'all_svg_sprites', ...IMAGE_DIRS.map(dir => `images_${dir}`));
 });
 
 /************************************************************
@@ -245,10 +260,10 @@ gulp.task('watch', () => {
 
   watch(path.join(IMAGES_OUTPUT, '*.*'), () => gulp.start('images'));
   for (let dir of IMAGE_DIRS) {
-    let taskName = `images-${dir}`;
+    let taskName = `images_${dir}`;
     watch(path.join(IMAGES_INPUT, dir, '*.*'), () => gulp.start(taskName));
   }
-  watch(path.join(SVG_SPRITES_INPUT, '*.svg'), () => gulp.start('svg-sprites'));
+  watch(path.join(SVG_SPRITES_INPUT, '*.svg'), () => gulp.start('all_svg_sprites'));
 
   watch(path.join(STYLES_INPUT, '**'), () => gulp.start('styles', 'raw_styles'));
   watch(path.join(SCRIPTS_INPUT, '**'), () => gulp.start('scripts', 'scripts_3rd'));

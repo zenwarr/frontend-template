@@ -28,7 +28,7 @@
     "gulp-svgmin": "^1.2.4",
     "gulp-wait": "0.0.2",
     "gulp-watch": "^4.3.11",
-    "handlebars-inline": "^1.0.0",
+    "handlebars-inline-file": "^1.0.0",
     "handlebars-layouts": "^3.1.4",
     "imports-loader": "^0.7.1",
     "node-sass": "^4.5.3",
