@@ -13,7 +13,6 @@ function loadConfig(dir) {
   try {
     let configFilename = path.join(dir, CONFIG_FILENAME);
     fs.accessSync(configFilename);
-    console.log(`Project config file found at ${configFilename}`);
     return require(configFilename);
   } catch (err) {
     let parentDir = path.dirname(dir);

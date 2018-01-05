@@ -1,4 +1,5 @@
 {
+  "DEBUG_CONFIG": false,
   "STYLES_INPUT": "src/styles",
   "STYLES_OUTPUT": "dist/css",
   "POSTCSS": {

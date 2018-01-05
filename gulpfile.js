@@ -158,7 +158,8 @@ gulp.task('html', ['all_svg_sprites'], () => {
       partials: path.join(config.HANDLEBARS_PARTIALS),
       helpers: path.join(config.HANDLEBARS_HELPERS),
       data: path.join(config.HANDLEBARS_COMMON_DATA),
-      bustCache: true
+      bustCache: true,
+      debug: config.DEBUG_CONFIG
     }).helpers(require('handlebars-inline-file'))
       .helpers(require('handlebars-layouts'))
       .on('error', (err) => console.error(err)))
