@@ -25,6 +25,7 @@
     "gulp-postcss": "^7.0.1",
     "gulp-sass": "^3.1.0",
     "gulp-svg-sprites": "^4.1.2",
+    "gulp-uglify": "^3.0.0",
     "gulp-wait": "0.0.2",
     "gulp-watch": "^4.3.11",
     "handlebars-inline-file": "^1.0.0",

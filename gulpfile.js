@@ -12,6 +12,7 @@ const watch = require('gulp-watch');
 const webpack_stream = require('webpack-stream');
 const webpack = require('webpack');
 const webpack_uglify_plugin = require('uglifyjs-webpack-plugin');
+const uglify = require('gulp-uglify');
 const named = require('vinyl-named');
 const wait = require('gulp-wait');
 const newer = require('gulp-newer');
@@ -27,6 +28,10 @@ let watching = false;
 
 function getDirs(baseDir) {
   return fs.readdirSync(baseDir).filter(filename => fs.statSync(path.join(baseDir, filename)).isDirectory());
+}
+
+function getFiles(baseDir, re) {
+  return fs.readdirSync(baseDir).filter(filename => !fs.statSync(path.join(baseDir, filename)).isDirectory() && filename.match(re));
 }
 
 const config = require('./project-config.json');
@@ -76,12 +81,20 @@ gulp.task('all_styles', () => {
  * Scripts
  ************************************************************/
 
+if (!config.BUNDLE_JS && config.ENTRY_SCRIPTS.some(e => e.match(/.tsx?$/))) {
+  console.warn(`You have TypeScript files in your ENTRY_SCRIPTS option, but project is configured to not be bundled with Webpack`);
+}
+
+if (!config.BUNDLE_JS && getFiles(path.join(__dirname, config.SCRIPTS_INPUT), /.tsx?$/)) {
+  console.warn(`You have TypeScript files in you scripts directory, but project is configured to not be bundled with Webpack`);
+}
+
 function generateWebpackConfig(input) {
   let outputFilename = input.replace(/.tsx?$/, '.js');
 
   let plugins = [ ];
 
-  if (!debugBuild) {
+  if (!debugBuild && config.MINIFY_JS) {
     plugins.push(new webpack_uglify_plugin());
   }
 
@@ -115,11 +128,19 @@ function generateWebpackConfig(input) {
 }
 
 gulp.task('scripts', () => {
-  for (let inputFile of config.ENTRY_SCRIPTS) {
-    gulp.src(path.join(config.SCRIPTS_INPUT, inputFile))
-      .pipe(named())
-      .pipe(webpack_stream(generateWebpackConfig(inputFile)))
-      .pipe(gulp.dest(config.SCRIPTS_OUTPUT))
+  if (config.BUNDLE_JS) {
+    for (let inputFile of config.ENTRY_SCRIPTS) {
+      gulp.src(path.join(config.SCRIPTS_INPUT, inputFile))
+        .pipe(named())
+        .pipe(webpack_stream(generateWebpackConfig(inputFile)))
+        .pipe(gulp.dest(config.SCRIPTS_OUTPUT))
+    }
+  } else {
+    let stream = gulp.src(path.join(config.SCRIPTS_INPUT, '*.js'));
+    if (config.MINIFY_JS) {
+      stream = stream.pipe(uglify());
+    }
+    stream.pipe(gulp.dest(config.SCRIPTS_OUTPUT));
   }
 });
 

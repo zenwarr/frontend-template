@@ -15,6 +15,8 @@
   "ENTRY_SCRIPTS": [
     "index.ts"
   ],
+  "MINIFY_JS": true,
+  "BUNDLE_JS": false,
   "HTML_INPUT": "src/html",
   "HTML_OUTPUT": "dist",
   "HANDLEBARS_PARTIALS": "src/html/partials/*.hbs",
