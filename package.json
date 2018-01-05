@@ -4,8 +4,13 @@
   "description": "",
   "main": "gulpfile.js",
   "scripts": {
-    "build-production": "gulp default",
-    "dev": "gulp watch"
+    "build": "gulp default",
+    "build-dev": "gulp build-dev",
+    "build-prod": "gulp default",
+    "clean": "gulp clean",
+    "rebuild": "gulp clean && gulp default",
+    "rebuild-dev": "gulp clean && gulp build-dev",
+    "watch": "gulp watch"
   },
   "author": "zenwarr",
   "license": "MIT",
