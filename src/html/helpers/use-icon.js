@@ -21,6 +21,10 @@ module.exports.register = Handlebars => {
         html = `<svg>${makeUseTag(icon)}</svg>`;
       }
       return new Handlebars.SafeString(html);
+    },
+    'use-svg-sprite': sprite => {
+      let compiled = Handlebars.compile(`{{{inline "dist/img/svg-sprites/${sprite}/symbols.svg"}}}`);
+      return new Handlebars.SafeString(compiled({}));
     }
   });
 };
