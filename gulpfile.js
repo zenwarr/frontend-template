@@ -142,13 +142,13 @@ gulp.task('scripts', () => {
     if (config.MINIFY_JS) {
       stream = stream.pipe(uglify());
     }
-    stream.pipe(gulp.dest(config.SCRIPTS_OUTPUT));
+    live_update(stream.pipe(gulp.dest(config.SCRIPTS_OUTPUT)));
   }
 });
 
 gulp.task('scripts_3rd', () => {
-  gulp.src(path.join(config.THIRD_PARTY_SCRIPTS_INPUT, '*.js'))
-      .pipe(gulp.dest(config.SCRIPTS_OUTPUT));
+  live_update(gulp.src(path.join(config.THIRD_PARTY_SCRIPTS_INPUT, '*.js'))
+      .pipe(gulp.dest(config.SCRIPTS_OUTPUT)));
 });
 
 gulp.task('all_scripts', () => {
