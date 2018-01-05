@@ -140,14 +140,25 @@ gulp.task('html', ['all_svg_sprites'], () => {
   live_update(gulp.src(path.join(config.HTML_INPUT, '*.hbs'))
     .pipe(gdata(file => {
       let data_file = path.join(config.HANDLEBARS_DATA, path.basename(file.path, '.hbs') + '.json');
-      return fs.existsSync(data_file) ? require(path.join(__dirname, data_file)) : { };
+      try {
+        fs.accessSync(data_file);
+      } catch (err) {
+        console.error(`Failed to load data file ${data_file}`);
+        return;
+      }
+
+      let file_contents = fs.readFileSync(path.join(__dirname, data_file), 'utf-8');
+      try {
+        return JSON.parse(file_contents);
+      } catch (err) {
+        console.error(`Failed to load data file ${data_file}, JSON is malformed`)
+      }
     }))
     .pipe(handlebars({
       partials: path.join(config.HANDLEBARS_PARTIALS),
       helpers: path.join(config.HANDLEBARS_HELPERS),
       data: path.join(config.HANDLEBARS_COMMON_DATA),
-      bustCache: true,
-      debug: debugBuild
+      bustCache: true
     }).helpers(require('handlebars-inline-file'))
       .helpers(require('handlebars-layouts'))
       .on('error', (err) => console.error(err)))
@@ -231,7 +242,7 @@ gulp.task('watch', () => {
   }
   watch(path.join(config.SVG_SPRITES_INPUT, '*.svg'), () => gulp.start('all_svg_sprites'));
 
-  watch(path.join(STYLES_INPUT, '**'), () => gulp.start('styles', 'raw_styles'));
+  watch(path.join(config.STYLES_INPUT, '**'), () => gulp.start('styles', 'raw_styles'));
   watch(path.join(config.SCRIPTS_INPUT, '**'), () => gulp.start('scripts', 'scripts_3rd'));
   watch(path.join(config.HTML_INPUT, '**'), () => gulp.start('html'));
 

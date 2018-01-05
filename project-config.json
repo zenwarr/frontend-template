@@ -19,7 +19,7 @@
   "HANDLEBARS_PARTIALS": "src/html/partials/*.hbs",
   "HANDLEBARS_HELPERS": "src/html/helpers/*.js",
   "HANDLEBARS_DATA": "src/html/data",
-  "HANDLEBARS_COMMON_DATA": "src/html/common/*.json",
+  "HANDLEBARS_COMMON_DATA": "src/html/data/common/*.json",
   "IMAGES_INPUT": "src/img",
   "IMAGES_OUTPUT": "dist/img",
   "IMAGEMIN_OPTIONS": {
