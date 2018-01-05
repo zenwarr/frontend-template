@@ -29,6 +29,8 @@ function getDirs(baseDir) {
   return fs.readdirSync(baseDir).filter(filename => fs.statSync(path.join(baseDir, filename)).isDirectory());
 }
 
+const config = require('./project-config.json');
+
 /************************************************************
  * Live updating
  ************************************************************/
@@ -43,28 +45,27 @@ const browser_sync = require('browser-sync').create();
  * Styles
  ************************************************************/
 
-const STYLES_INPUT = 'src/styles';
-const STYLES_OUTPUT = 'dist/css';
-
-const POSTCSS_PREPROCESSORS = [
-  require('autoprefixer')({
-    browsers: ['last 3 versions', '> 1%', 'ie >= 11'],
-    remove: false
-  }),
-  require('postcss-discard-comments')
-];
+const postcssConfig = [ ];
+for (let key of Object.keys(config.POSTCSS)) {
+  let plugin = require(key);
+  if (config.POSTCSS[key] != null) {
+    postcssConfig.push(plugin(config.POSTCSS[key]));
+  } else {
+    postcssConfig.push(plugin);
+  }
+}
 
 gulp.task('styles', () => {
-  live_update(gulp.src(path.join(STYLES_INPUT, '*.scss'))
+  live_update(gulp.src(path.join(config.STYLES_INPUT, '*.scss'))
                   .pipe(sass().on('error', sass.logError))
-                  .pipe(postcss(POSTCSS_PREPROCESSORS))
-                  .pipe(gulp.dest(STYLES_OUTPUT)));
+                  .pipe(postcss(postcssConfig))
+                  .pipe(gulp.dest(config.STYLES_OUTPUT)));
 });
 
 gulp.task('raw_styles', () => {
-  live_update(gulp.src(path.join(STYLES_INPUT, '*.css'))
-                            .pipe(postcss(POSTCSS_PREPROCESSORS))
-                            .pipe(gulp.dest(STYLES_OUTPUT)));
+  live_update(gulp.src(path.join(config.STYLES_INPUT, '*.css'))
+                            .pipe(postcss(postcssConfig))
+                            .pipe(gulp.dest(config.STYLES_OUTPUT)));
 });
 
 gulp.task('all_styles', () => {
@@ -74,14 +75,6 @@ gulp.task('all_styles', () => {
 /************************************************************
  * Scripts
  ************************************************************/
-
-const SCRIPTS_INPUT = 'src/scripts';
-const THIRDPARTY_SCRIPTS_INPUT = path.join(SCRIPTS_INPUT, '3rdparty');
-const SCRIPTS_OUTPUT = 'dist/js';
-
-const ENTRY_SCRIPTS = [
-  'index.ts'
-];
 
 function generateWebpackConfig(input) {
   let outputFilename = input.replace(/.tsx?$/, '.js');
@@ -93,10 +86,10 @@ function generateWebpackConfig(input) {
   }
 
   return {
-    entry: path.join(__dirname, SCRIPTS_INPUT, input),
+    entry: path.join(__dirname, config.SCRIPTS_INPUT, input),
     output: {
       filename: outputFilename,
-      path: path.join(__dirname, SCRIPTS_OUTPUT),
+      path: path.join(__dirname, config.SCRIPTS_OUTPUT),
       libraryTarget: 'var'
     },
     devtool: debugBuild ? 'source-map' : undefined,
@@ -122,17 +115,17 @@ function generateWebpackConfig(input) {
 }
 
 gulp.task('scripts', () => {
-  for (let inputFile of ENTRY_SCRIPTS) {
-    gulp.src(path.join(SCRIPTS_INPUT, inputFile))
+  for (let inputFile of config.ENTRY_SCRIPTS) {
+    gulp.src(path.join(config.SCRIPTS_INPUT, inputFile))
       .pipe(named())
       .pipe(webpack_stream(generateWebpackConfig(inputFile)))
-      .pipe(gulp.dest(SCRIPTS_OUTPUT))
+      .pipe(gulp.dest(config.SCRIPTS_OUTPUT))
   }
 });
 
 gulp.task('scripts_3rd', () => {
-  gulp.src(path.join(THIRDPARTY_SCRIPTS_INPUT, '*.js'))
-      .pipe(gulp.dest(SCRIPTS_OUTPUT));
+  gulp.src(path.join(config.THIRD_PARTY_SCRIPTS_INPUT, '*.js'))
+      .pipe(gulp.dest(config.SCRIPTS_OUTPUT));
 });
 
 gulp.task('all_scripts', () => {
@@ -143,26 +136,23 @@ gulp.task('all_scripts', () => {
  * HTML
  ************************************************************/
 
-const HTML_INPUT = 'src/html';
-const HTML_OUTPUT = 'dist';
-
 gulp.task('html', ['all_svg_sprites'], () => {
-  live_update(gulp.src(path.join(HTML_INPUT, '*.hbs'))
+  live_update(gulp.src(path.join(config.HTML_INPUT, '*.hbs'))
     .pipe(gdata(file => {
-      let data_file = path.join(HTML_INPUT, 'data', path.basename(file.path, '.hbs') + '.json');
+      let data_file = path.join(config.HANDLEBARS_DATA, path.basename(file.path, '.hbs') + '.json');
       return fs.existsSync(data_file) ? require(path.join(__dirname, data_file)) : { };
     }))
     .pipe(handlebars({
-      partials: path.join(HTML_INPUT, 'partials/*.hbs'),
-      helpers: path.join(HTML_INPUT, 'helpers/*.js'),
-      data: path.join(HTML_INPUT, 'data/common/*.json'),
+      partials: path.join(config.HANDLEBARS_PARTIALS),
+      helpers: path.join(config.HANDLEBARS_HELPERS),
+      data: path.join(config.HANDLEBARS_COMMON_DATA),
       bustCache: true,
       debug: debugBuild
     }).helpers(require('handlebars-inline-file'))
       .helpers(require('handlebars-layouts'))
       .on('error', (err) => console.error(err)))
     .pipe(ext_replace('.html'))
-    .pipe(gulp.dest(HTML_OUTPUT)));
+    .pipe(gulp.dest(config.HTML_OUTPUT)));
 });
 
 gulp.task('all_html', () => {
@@ -173,47 +163,29 @@ gulp.task('all_html', () => {
  * Images
  ************************************************************/
 
-const IMAGES_INPUT = 'src/img';
-const IMAGES_OUTPUT = 'dist/img';
-const IMAGE_DIRS = getDirs(IMAGES_INPUT);
-const SVG_SPRITES_INPUT = 'src/svg';
-const SVG_SPRITE_OUTPUT = 'dist/img/svg-sprites';
-const SVG_SPRITES = getDirs(SVG_SPRITES_INPUT);
-const IMAGE_COPY_DELAY = 500;
-
-const IMAGEMIN_OPTIONS = {
-  progressive: true,
-  multipass: true
-};
+const imageDirs = getDirs(config.IMAGES_INPUT);
+const SVG_SPRITES = getDirs(config.SVG_SPRITES_INPUT);
 
 function createImageTask(taskName, dir) {
-  let outputDir = path.join(IMAGES_OUTPUT, dir);
+  let outputDir = path.join(config.IMAGES_OUTPUT, dir);
 
   return gulp.task(taskName, () => {
-    live_update(gulp.src(path.join(IMAGES_INPUT, dir, '*.*'))
+    live_update(gulp.src(path.join(config.IMAGES_INPUT, dir, '*.*'))
       .pipe(newer(outputDir))
-      .pipe(wait(IMAGE_COPY_DELAY))
-      .pipe(imagemin(IMAGEMIN_OPTIONS))
+      .pipe(wait(config.IMAGE_COPY_DELAY))
+      .pipe(imagemin(config.IMAGEMIN_OPTIONS))
       .pipe(gulp.dest(outputDir)));
   });
 }
 
 createImageTask('images', '');
-IMAGE_DIRS.map(dir => createImageTask(`images_${dir}`, dir));
+imageDirs.map(dir => createImageTask(`images_${dir}`, dir));
 
 function createSvgTask(taskName, dir) {
   return gulp.task(taskName, () => {
-    live_update(gulp.src(path.join(SVG_SPRITES_INPUT, dir, '*.svg'))
-      .pipe(svgSprites({
-        mode: 'symbols',
-        preview: false,
-        svgId: 'i-%f',
-        svg: {
-          symbols: 'symbols.svg',
-          defs: 'defs.svg'
-        }
-      }))
-      .pipe(gulp.dest(path.join(SVG_SPRITE_OUTPUT, dir))));
+    live_update(gulp.src(path.join(config.SVG_SPRITES_INPUT, dir, '*.svg'))
+      .pipe(svgSprites(config.SVG_SPRITES_OPTIONS))
+      .pipe(gulp.dest(path.join(config.SVG_SPRITES_OUTPUT, dir))));
   });
 }
 
@@ -224,7 +196,7 @@ gulp.task('all_svg_sprites', () => {
 });
 
 gulp.task('all_images', () => {
-  gulp.start('images', 'all_svg_sprites', ...IMAGE_DIRS.map(dir => `images_${dir}`));
+  gulp.start('images', 'all_svg_sprites', ...imageDirs.map(dir => `images_${dir}`));
 });
 
 /************************************************************
@@ -250,23 +222,18 @@ gulp.task('watch', () => {
 
   gulp.start('all');
 
-  browser_sync.init({
-    server: {
-      baseDir: './dist'
-    },
-    open: false
-  });
+  browser_sync.init(config.BROWSER_SYNC_OPTIONS);
 
-  watch(path.join(IMAGES_OUTPUT, '*.*'), () => gulp.start('images'));
-  for (let dir of IMAGE_DIRS) {
+  watch(path.join(config.IMAGES_INPUT, '*.*'), () => gulp.start('images'));
+  for (let dir of imageDirs) {
     let taskName = `images_${dir}`;
-    watch(path.join(IMAGES_INPUT, dir, '*.*'), () => gulp.start(taskName));
+    watch(path.join(config.IMAGES_INPUT, dir, '*.*'), () => gulp.start(taskName));
   }
-  watch(path.join(SVG_SPRITES_INPUT, '*.svg'), () => gulp.start('all_svg_sprites'));
+  watch(path.join(config.SVG_SPRITES_INPUT, '*.svg'), () => gulp.start('all_svg_sprites'));
 
   watch(path.join(STYLES_INPUT, '**'), () => gulp.start('styles', 'raw_styles'));
-  watch(path.join(SCRIPTS_INPUT, '**'), () => gulp.start('scripts', 'scripts_3rd'));
-  watch(path.join(HTML_INPUT, '**'), () => gulp.start('html'));
+  watch(path.join(config.SCRIPTS_INPUT, '**'), () => gulp.start('scripts', 'scripts_3rd'));
+  watch(path.join(config.HTML_INPUT, '**'), () => gulp.start('html'));
 
   browser_sync.reload();
 });

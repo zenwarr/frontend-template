@@ -1,0 +1,47 @@
+{
+  "STYLES_INPUT": "src/styles",
+  "STYLES_OUTPUT": "dist/css",
+  "POSTCSS": {
+    "autoprefixer": {
+      "browsers": ["last 3 versions", "> 1%", "ie >= 11"],
+      "remove": false
+    },
+    "postcss-discard-comments": null
+  },
+  "SCRIPTS_INPUT": "src/scripts",
+  "THIRD_PARTY_SCRIPTS_INPUT": "src/scripts/3rdparty",
+  "SCRIPTS_OUTPUT": "dist/js",
+  "ENTRY_SCRIPTS": [
+    "index.ts"
+  ],
+  "HTML_INPUT": "src/html",
+  "HTML_OUTPUT": "dist",
+  "HANDLEBARS_PARTIALS": "src/html/partials/*.hbs",
+  "HANDLEBARS_HELPERS": "src/html/helpers/*.js",
+  "HANDLEBARS_DATA": "src/html/data",
+  "HANDLEBARS_COMMON_DATA": "src/html/common/*.json",
+  "IMAGES_INPUT": "src/img",
+  "IMAGES_OUTPUT": "dist/img",
+  "IMAGEMIN_OPTIONS": {
+    "progressive": true,
+    "multipass": true
+  },
+  "SVG_SPRITES_OPTIONS": {
+    "mode": "symbols",
+    "preview": false,
+    "svgId": "i-%f",
+    "svg": {
+      "symbols": "symbols.svg",
+      "defs": "defs.svg"
+    }
+  },
+  "SVG_SPRITES_INPUT": "src/svg",
+  "SVG_SPRITES_OUTPUT": "dist/img/svg-sprites",
+  "IMAGE_COPY_DELAY": 500,
+  "BROWSER_SYNC_OPTIONS": {
+    "server": {
+      "baseDir": "./dist"
+    },
+    "open": false
+  }
+}
