@@ -17,7 +17,6 @@ const wait = require('gulp-wait');
 const newer = require('gulp-newer');
 const imagemin = require('gulp-imagemin');
 const svgSprites = require('gulp-svg-sprites');
-const svgmin = require('gulp-svgmin');
 
 /************************************************************
  * Options
@@ -157,7 +156,8 @@ gulp.task('html', ['all_svg_sprites'], () => {
       partials: path.join(HTML_INPUT, 'partials/*.hbs'),
       helpers: path.join(HTML_INPUT, 'helpers/*.js'),
       data: path.join(HTML_INPUT, 'data/common/*.json'),
-      bustCache: true
+      bustCache: true,
+      debug: debugBuild
     }).helpers(require('handlebars-inline-file'))
       .helpers(require('handlebars-layouts'))
       .on('error', (err) => console.error(err)))
