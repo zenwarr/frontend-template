@@ -24,6 +24,7 @@
   "HANDLEBARS_HELPERS": "src/html/helpers/*.js",
   "HANDLEBARS_DATA": "src/html/data",
   "HANDLEBARS_COMMON_DATA": "src/html/data/common/*.json",
+  "BEAUTIFY_HTML": true,
   "IMAGES_INPUT": "src/img",
   "IMAGES_OUTPUT": "dist/img",
   "IMAGEMIN_OPTIONS": {
@@ -47,5 +48,15 @@
       "baseDir": "./dist"
     },
     "open": false
+  },
+  "BEAUTIFY_OPTIONS": {
+    "html": {
+      "indent_size": 2,
+      "indent_char": " ",
+      "content_unformatted": [ "pre", "textarea" ],
+      "preserve_newlines": true,
+      "max_preserve_newlines": 1,
+      "end_with_newline": true
+    }
   }
 }

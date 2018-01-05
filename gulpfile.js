@@ -19,6 +19,7 @@ const newer = require('gulp-newer');
 const imagemin = require('gulp-imagemin');
 const svgSprites = require('gulp-svg-sprites');
 const rimraf = require('rimraf');
+const jsbeautify = require('gulp-jsbeautifier');
 
 /************************************************************
  * Options
@@ -159,7 +160,7 @@ gulp.task('all_scripts', () => {
  ************************************************************/
 
 gulp.task('html', ['all_svg_sprites'], () => {
-  live_update(gulp.src(path.join(config.HTML_INPUT, '*.hbs'))
+  let stream = gulp.src(path.join(config.HTML_INPUT, '*.hbs'))
     .pipe(gdata(file => {
       let data_file = path.join(config.HANDLEBARS_DATA, path.basename(file.path, '.hbs') + '.json');
       try {
@@ -185,8 +186,13 @@ gulp.task('html', ['all_svg_sprites'], () => {
     }).helpers(require('handlebars-inline-file'))
       .helpers(require('handlebars-layouts'))
       .on('error', (err) => console.error(err)))
-    .pipe(ext_replace('.html'))
-    .pipe(gulp.dest(config.HTML_OUTPUT)));
+    .pipe(ext_replace('.html'));
+
+  if (config.BEAUTIFY_HTML) {
+    stream = stream.pipe(jsbeautify(config.BEAUTIFY_OPTIONS));
+  }
+
+  live_update(stream.pipe(gulp.dest(config.HTML_OUTPUT)));
 });
 
 gulp.task('all_html', () => {
