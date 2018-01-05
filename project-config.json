@@ -1,5 +1,6 @@
 {
   "DEBUG_CONFIG": false,
+  "BASE_OUTPUT": "dist",
   "STYLES_INPUT": "src/styles",
   "STYLES_OUTPUT": "dist/css",
   "POSTCSS": {

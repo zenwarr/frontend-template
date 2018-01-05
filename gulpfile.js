@@ -18,6 +18,7 @@ const wait = require('gulp-wait');
 const newer = require('gulp-newer');
 const imagemin = require('gulp-imagemin');
 const svgSprites = require('gulp-svg-sprites');
+const rimraf = require('rimraf');
 
 /************************************************************
  * Options
@@ -248,6 +249,10 @@ gulp.task('default', () => {
 gulp.task('build-dev', () => {
   debugBuild = true;
   gulp.start('all');
+});
+
+gulp.task('clean', () => {
+  rimraf.sync(path.join(__dirname, config.BASE_OUTPUT));
 });
 
 gulp.task('watch', () => {
