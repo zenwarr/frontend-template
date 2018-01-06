@@ -29,7 +29,12 @@ let debugBuild = true;
 let watching = false;
 
 function getDirs(baseDir) {
-  return fs.readdirSync(baseDir).filter(filename => fs.statSync(path.join(baseDir, filename)).isDirectory());
+  try {
+    fs.accessSync();
+    return fs.readdirSync(baseDir).filter(filename => fs.statSync(path.join(baseDir, filename)).isDirectory());
+  } catch (err) {
+    return [];
+  }
 }
 
 function getFiles(baseDir, re) {
